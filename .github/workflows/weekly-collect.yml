@@ -1,0 +1,61 @@
+# 週次 競合ニュース自動収集（恒久運用版）
+#
+# ★有効化に必要な準備（未設定だと動きません）:
+#   1. リポジトリ Settings > Secrets and variables > Actions に ANTHROPIC_API_KEY を登録
+#   2. Settings > Actions > General > Workflow permissions を "Read and write" に
+#   3. 下の action バージョン/入力は環境に合わせて要確認（初回は手動実行で検証）
+#
+# 動作: 毎週月曜 09:12(JST) に競合4社のニュースをWeb収集し、
+#       templates/mec-h_auto_collected.csv に追記してコミット&プッシュする。
+#
+# ※ Claude Code のセッション内 cron はセッション終了で消えるため、
+#    「本当に毎週勝手に動く」運用はこちら(GitHub Actions)が本命です。
+
+name: weekly-competitive-collect
+
+on:
+  schedule:
+    - cron: "12 0 * * 1"   # UTC 00:12 Mon = JST 09:12 Mon
+  workflow_dispatch:        # 手動実行も可（初回テスト用）
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: claude/capture-tool-refinement-ye1rbk
+
+      - name: Run collector (Claude Code Action)
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Web検索を許可（アクションのバージョンによりオプション名は要確認）
+          allowed_tools: "WebSearch,WebFetch,Read,Edit,Write"
+          prompt: |
+            三菱地所ハウスネット向けの競合ウォッチ週次収集。
+            競合4社(三井のリハウス / 東急リバブル / 住友不動産ステップ / 野村の仲介プラス)と
+            不動産仲介業界について、直近1週間の新しいニュース・プレスリリース・新サービス・
+            料金改定・キャンペーン・ブランド施策をWeb検索で収集する。
+            templates/mec-h_auto_collected.csv のスキーマ
+            (週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値)
+            に沿って新しい行を追記。BOM付きUTF-8を維持。カテゴリは基本「ニュース」、
+            重要度は高/中/低、AIメモに必ず(出典: 媒体名)を付ける。事実のみ・推測は(推測)と明示。
+            値にASCIIカンマは使わない(全角・スラッシュで代替)。週の値は実行日(今週)ベース。
+            新規性がなければファイルは変更しない。
+
+      - name: Commit & push
+        run: |
+          git config user.name "competitive-bot"
+          git config user.email "competitive-bot@users.noreply.github.com"
+          if ! git diff --quiet -- templates/mec-h_auto_collected.csv; then
+            git add templates/mec-h_auto_collected.csv
+            git commit -m "週次自動収集: $(date +%Y-%m-%d) 競合ニュース更新"
+            git push
+          else
+            echo "変更なし（今週の新規なし）"
+          fi
