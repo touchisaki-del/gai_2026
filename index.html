@@ -49,6 +49,7 @@
     -webkit-font-smoothing:antialiased;
   }
   .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 64px}
+  .tnum{font-variant-numeric:tabular-nums}
 
   /* Header */
   header.top{
@@ -61,23 +62,39 @@
     background:radial-gradient(circle,rgba(232,115,12,.35),transparent 70%);}
   .logo{width:44px;height:44px;border-radius:12px;background:var(--accent);
     display:grid;place-items:center;font-size:22px;flex:none;box-shadow:0 4px 14px rgba(232,115,12,.4)}
-  .titles h1{margin:0;font-size:20px;letter-spacing:.02em}
+  .titles h1{margin:0;font-size:20px;letter-spacing:.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .subj-pill{font-size:11px;font-weight:600;background:var(--accent);color:#fff;padding:3px 10px;border-radius:20px;letter-spacing:.02em}
   .titles p{margin:2px 0 0;font-size:12.5px;color:#c9d1d9;opacity:.85}
   .top-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;z-index:1}
   .badge-bu{background:var(--accent);color:#fff;font-weight:700;font-size:12px;
     padding:5px 12px;border-radius:8px;letter-spacing:.05em}
-  select,button.ghost{
-    font-family:inherit;font-size:12.5px;color:var(--ink);background:var(--panel);
+  select{font-family:inherit;font-size:12.5px;color:var(--ink);background:var(--panel);
     border:1px solid var(--line);border-radius:9px;padding:7px 11px;cursor:pointer}
   header.top select{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2)}
   header.top select option{color:#111}
   .theme-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;
     border-radius:9px;padding:7px 10px;cursor:pointer;font-size:14px}
 
-  .updated{font-size:11.5px;color:#c9d1d9;opacity:.8}
+  .updated{font-size:11.5px;color:var(--ink-3);margin:8px 4px 0}
+
+  /* toolbar */
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 2px 0}
+  .tb-btn{font-family:inherit;font-size:12.5px;color:var(--ink);background:var(--panel);
+    border:1px solid var(--line);border-radius:9px;padding:8px 13px;cursor:pointer;display:inline-flex;
+    align-items:center;gap:6px;transition:.12s}
+  .tb-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .tb-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tb-btn.primary:hover{opacity:.92;color:#fff}
+  .tb-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .subj-input{font-family:inherit;font-size:12.5px;padding:8px 12px;border-radius:9px;
+    border:1px solid var(--line);background:var(--panel);color:var(--ink);min-width:210px}
+  .load-msg{margin:10px 2px 0;font-size:12px;padding:9px 13px;border-radius:9px;
+    background:var(--add-bg);color:var(--add);border:1px solid color-mix(in srgb,var(--add) 30%,transparent)}
+  .load-msg.err{background:var(--rm-bg);color:var(--rm);border-color:color-mix(in srgb,var(--rm) 30%,transparent)}
+  .load-msg.demo{background:var(--info-bg);color:var(--info);border-color:color-mix(in srgb,var(--info) 30%,transparent)}
 
   /* KPI row */
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}
   .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
     padding:16px 18px;box-shadow:var(--shadow)}
   .kpi .lbl{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:6px}
@@ -143,6 +160,11 @@
     .cat.KW{background:#241b3d;color:#b39dfb}.cat.LP{background:#12261a;color:#5fd472}
     .cat.NEWS{background:#2a2211;color:#e3b341}
   }
+  :root[data-theme="light"] .cat.CR{background:#fdeee0;color:#c25a00}
+  :root[data-theme="light"] .cat.TD{background:#e7f0fb;color:#0a5bc4}
+  :root[data-theme="light"] .cat.KW{background:#eae6fb;color:#5a3fc0}
+  :root[data-theme="light"] .cat.LP{background:#e6f4ea;color:#1a7f37}
+  :root[data-theme="light"] .cat.NEWS{background:#fbf3d8;color:#8a5d00}
   .comp{font-weight:700;font-size:13.5px}
   .meta-line{font-size:11.5px;color:var(--ink-3);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .media-tag{font-size:11px;color:var(--ink-2);background:var(--panel-2);border:1px solid var(--line);
@@ -165,11 +187,25 @@
   .ai-note .ic{flex:none}
   .empty{text-align:center;color:var(--ink-3);padding:40px;font-size:13px}
 
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(10,12,16,.55);display:grid;place-items:center;z-index:50;padding:20px}
+  .modal[hidden]{display:none}
+  .modal-box{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 20px 60px rgba(0,0,0,.4);width:min(680px,100%);max-height:86vh;overflow:auto;padding:20px 22px}
+  .modal-h{display:flex;align-items:center;font-size:15px;font-weight:700;margin-bottom:6px}
+  .modal-h button{margin-left:auto;background:none;border:none;font-size:18px;color:var(--ink-3);cursor:pointer}
+  .modal-hint{font-size:11.5px;color:var(--ink-3);margin:0 0 10px;line-height:1.7;
+    background:var(--panel-2);border:1px solid var(--line-2);border-radius:9px;padding:9px 12px}
+  .modal textarea{width:100%;min-height:200px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12px;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--panel-2);
+    color:var(--ink);resize:vertical;line-height:1.6}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+
   footer{margin-top:34px;text-align:center;font-size:11px;color:var(--ink-3);line-height:1.8}
   footer .axes{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px}
   footer .axes span{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 12px;color:var(--ink-2)}
 
-  @media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.tb-right{margin-left:0;width:100%}.subj-input{flex:1}}
 </style>
 </head>
 <body>
@@ -178,20 +214,29 @@
   <header class="top">
     <div class="logo">🔭</div>
     <div class="titles">
-      <h1>まるっと競合分析くん</h1>
+      <h1>まるっと競合分析くん <span class="subj-pill" id="subjPill" hidden></span></h1>
       <p>競合ウォッチダッシュボード — CR・TD・KW・LP・ニュースを横断集約し、先週との差分をAIが自動要約</p>
     </div>
     <div class="top-right">
       <span class="badge-bu">BU</span>
-      <select id="weekSel" aria-label="対象週">
-        <option value="w28">2026/07/14週(今週) vs 先週</option>
-        <option value="w27">2026/07/07週 vs 前週</option>
-      </select>
+      <select id="weekSel" aria-label="対象週"></select>
       <button class="theme-btn" id="themeBtn" title="テーマ切替">🌓</button>
     </div>
   </header>
 
-  <div class="updated" style="margin:8px 4px 0">最終更新: 2026/07/15 08:00 JST ・ 監視媒体: Google / Yahoo! / Meta / LINE / TikTok / X / YouTube / プレスリリース</div>
+  <div class="updated" id="updated"></div>
+
+  <!-- data toolbar -->
+  <div class="toolbar">
+    <label class="tb-btn">📤 CSV読み込み<input type="file" id="csvFile" accept=".csv,.tsv,.txt" hidden></label>
+    <button class="tb-btn" id="pasteBtn">📋 貼り付けで読み込み</button>
+    <button class="tb-btn" id="tplBtn">⬇ テンプレートCSV</button>
+    <button class="tb-btn" id="resetBtn">↺ デモに戻す</button>
+    <div class="tb-right">
+      <input class="subj-input" id="subj" placeholder="対象業種・案件名(任意)" />
+    </div>
+  </div>
+  <div class="load-msg" id="loadMsg" hidden></div>
 
   <!-- KPI -->
   <div class="kpis" id="kpis"></div>
@@ -224,12 +269,7 @@
   </div>
   <div class="filters" id="compFilter">
     <span class="flabel">競合</span>
-    <div class="grp">
-      <span class="chip on" data-comp="all">すべて</span>
-      <span class="chip" data-comp="キャリアジャンプ">キャリアジャンプ</span>
-      <span class="chip" data-comp="ワークナビ">ワークナビ</span>
-      <span class="chip" data-comp="ジョブスター">ジョブスター</span>
-    </div>
+    <div class="grp" id="compChips"></div>
     <div class="search"><input id="q" type="search" placeholder="キーワードで絞り込み…" /></div>
   </div>
 
@@ -240,17 +280,35 @@
       <span>審査軸① 新規性</span><span>審査軸② 事業インパクト</span>
       <span>審査軸③ 実現可能性</span><span>審査軸④ 浸透度</span>
     </div>
-    まるっと競合分析くん MVP ・ 東地チーム ・ デモデータで動作しています(実データ連携は次フェーズ)<br/>
+    まるっと競合分析くん MVP ・ 東地チーム ・ CSV/スプレッドシート読み込みに対応(実データ自動連携は次フェーズ)<br/>
     局内の誰もが同じ着眼点で競合を把握し、提案スピードと精度を向上させることを目的としたプロトタイプです。
   </footer>
 
 </div>
 
+<!-- paste modal -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-box">
+    <div class="modal-h">CSV / TSV を貼り付けて読み込み<button id="modalX" aria-label="閉じる">✕</button></div>
+    <p class="modal-hint">1行目はヘッダー行にしてください（順不同・過不足OK）:<br/>
+      <code>週 , カテゴリ , 競合 , 媒体 , 重要度 , 日付 , タイトル , 先週 , 今週 , AIメモ , 入札上昇 , 入札下落</code><br/>
+      ・カテゴリ = CR / TD / KW / LP / ニュース　・重要度 = 高(要対応) / 中(注視) / 低(参考)<br/>
+      ・複数の媒体・入札KWは <code>;</code>（セミコロン）区切り。Excel/スプレッドシートの範囲をコピペしてもOK（タブ区切り自動判定）。</p>
+    <textarea id="pasteArea" placeholder="ここに貼り付け…"></textarea>
+    <div class="modal-actions">
+      <button class="tb-btn" id="pasteTpl">テンプレを入れる</button>
+      <button class="tb-btn primary" id="pasteLoad">読み込む</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/* ============ デモデータ ============ */
-/* 実運用では各媒体ツールからの自動収集 → 週次スナップショット → 差分抽出 → AI要約 に置き換える */
-const DATA = {
+/* ============ デモデータ（初期表示） ============ */
+const DEMO = {
+  order:["w28","w27"],
+  weeks:{
   w28: {
+    label:"2026/07/14週（今週） vs 先週",
     kpis:{competitors:3, changes:11, newCR:6, alerts:3},
     summary:{
       lead:"今週は「キャリアジャンプ」が新CR6本を集中投下し、訴求軸を『年収』から『スピード内定』へシフト。ワークナビはLPの申込フローを短縮、ジョブスターは指名KWの入札を強化しています。",
@@ -332,6 +390,7 @@ const DATA = {
     ]
   },
   w27:{
+    label:"2026/07/07週 vs 前週",
     kpis:{competitors:3, changes:6, newCR:2, alerts:1},
     summary:{
       lead:"前週は大きな訴求転換はなし。ジョブスターがLPのファーストビューを刷新し、ワークナビがKW入札を微増させた程度で、全体的に静かな一週間でした。",
@@ -370,78 +429,224 @@ const DATA = {
        diffType:"kw", note:"正社員転職へのターゲティング純化。"},
     ]
   }
+  }
 };
 
-/* ============ レンダリング ============ */
+/* ============ 状態 ============ */
+let store = DEMO;               // 現在表示中のデータセット
+let isDemo = true;
+const state = {week:null, cat:"all", comp:"all", q:""};
+
 const $ = s => document.querySelector(s);
-const state = {week:"w28", cat:"all", comp:"all", q:""};
+function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 
-function esc(s){return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+/* ============ CSV / TSV パース ============ */
+function detectDelim(text){
+  const head = text.split(/\r?\n/)[0]||"";
+  const tabs=(head.match(/\t/g)||[]).length, commas=(head.match(/,/g)||[]).length;
+  return tabs>commas ? "\t" : ",";
+}
+function parseDelimited(text, delim){
+  const rows=[]; let field="", row=[], inQ=false;
+  text = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else inQ=false; }
+      else field+=c;
+    } else {
+      if(c==='"') inQ=true;
+      else if(c===delim){ row.push(field); field=""; }
+      else if(c==="\n"){ row.push(field); rows.push(row); row=[]; field=""; }
+      else field+=c;
+    }
+  }
+  if(field.length||row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=>!(r.length===1 && r[0].trim()===""));
+}
 
+const HKEY = {
+  "週":"week","week":"week","対象週":"week",
+  "カテゴリ":"cat","cat":"cat","種別":"cat","category":"cat",
+  "競合":"comp","comp":"comp","競合他社":"comp","会社":"comp","company":"comp",
+  "媒体":"media","media":"media","メディア":"media",
+  "重要度":"sev","sev":"sev","severity":"sev","優先度":"sev",
+  "日付":"date","date":"date","検知日":"date",
+  "タイトル":"title","title":"title","変化点":"title",
+  "先週":"before","before":"before","変更前":"before","旧":"before",
+  "今週":"after","after":"after","変更後":"after","新":"after",
+  "aiメモ":"note","note":"note","メモ":"note","備考":"note","コメント":"note",
+  "入札上昇":"kwUp","kwup":"kwUp","上昇kw":"kwUp","追加kw":"kwUp",
+  "入札下落":"kwDown","kwdown":"kwDown","下落kw":"kwDown","除外kw":"kwDown",
+};
+function normCat(v){
+  const s=(v||"").trim().toUpperCase();
+  if(s.includes("ニュース")||s==="NEWS"||s.includes("PR")) return "NEWS";
+  if(["CR","TD","KW","LP"].includes(s)) return s;
+  if(v&&v.includes("クリエイティブ")) return "CR";
+  if(v&&v.includes("キーワード")) return "KW";
+  if(v&&(v.includes("ランディング")||v.includes("LP"))) return "LP";
+  return s||"CR";
+}
+function normSev(v){
+  const s=(v||"").trim();
+  if(/高|high|要対応|H/i.test(s)) return "high";
+  if(/中|mid|medium|注視|M/i.test(s)) return "mid";
+  return "low";
+}
+function splitMulti(v){ return (v||"").split(/[;；]/).map(x=>x.trim()).filter(Boolean); }
+
+function buildFromRows(rows){
+  if(!rows.length) throw new Error("データが空です。");
+  const header = rows[0].map(h=>HKEY[h.trim().toLowerCase()] || HKEY[h.trim()] || h.trim());
+  const idx = {}; header.forEach((h,i)=>{ if(!(h in idx)) idx[h]=i; });
+  if(!("comp" in idx) || !("title" in idx))
+    throw new Error("ヘッダーに『競合』『タイトル』列が見つかりません。テンプレートをご確認ください。");
+  const get=(r,k)=> (k in idx) ? (r[idx[k]]||"").trim() : "";
+
+  const events=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i]; if(!r || !get(r,"title")) continue;
+    const kwUp=splitMulti(get(r,"kwUp")), kwDown=splitMulti(get(r,"kwDown"));
+    const cat=normCat(get(r,"cat"));
+    let diffType="text";
+    if(kwUp.length||kwDown.length) diffType="kw";
+    else if(cat==="NEWS") diffType="news";
+    events.push({
+      week: get(r,"week") || "読み込みデータ",
+      cat, comp:get(r,"comp"), media:splitMulti(get(r,"media")).length?splitMulti(get(r,"media")):["—"],
+      sev:normSev(get(r,"sev")), date:get(r,"date")||"—",
+      title:get(r,"title"), before:get(r,"before")||"—", after:get(r,"after")||"—",
+      note:get(r,"note")||"", diffType, kwUp, kwDown
+    });
+  }
+  if(!events.length) throw new Error("有効なデータ行がありません。");
+
+  // 週ごとにグルーピング（出現順を維持）
+  const order=[], byWeek={};
+  const allComps = new Set();
+  events.forEach(e=>{
+    allComps.add(e.comp);
+    if(!byWeek[e.week]){ byWeek[e.week]={events:[]}; order.push(e.week); }
+    byWeek[e.week].events.push(e);
+  });
+  const compCount = allComps.size;
+  const weeks={};
+  order.forEach((wk,wi)=>{
+    const evs=byWeek[wk].events;
+    weeks[wk]={
+      label: wk + (wi===0? "（最新）":""),
+      kpis:{
+        competitors: compCount,
+        changes: evs.length,
+        newCR: evs.filter(e=>e.cat==="CR").length,
+        alerts: evs.filter(e=>e.sev==="high").length,
+      },
+      summary: genSummary(wk, evs),
+      events: evs,
+    };
+  });
+  return {order, weeks};
+}
+
+function genSummary(wk, evs){
+  // 競合別の件数で最多を特定
+  const byComp={}; evs.forEach(e=>byComp[e.comp]=(byComp[e.comp]||0)+1);
+  const top=Object.entries(byComp).sort((a,b)=>b[1]-a[1])[0];
+  const alerts=evs.filter(e=>e.sev==="high");
+  const catCount={}; evs.forEach(e=>catCount[e.cat]=(catCount[e.cat]||0)+1);
+  const catStr=Object.entries(catCount).sort((a,b)=>b[1]-a[1])
+    .map(([c,n])=>`${catLabel(c)} ${n}`).join(" / ");
+  const lead=`「${wk}」では全 ${evs.length} 件の変化を検知しました。`
+    + (top? `最も動きが多いのは ${top[0]}（${top[1]}件）です。` : "")
+    + `内訳: ${catStr}。`;
+  const rank={high:0,mid:1,low:2};
+  const items=[...evs].sort((a,b)=>rank[a.sev]-rank[b.sev]).slice(0,4).map(e=>({
+    type: e.sev==="high"?"rm":e.sev==="mid"?"chg":"info",
+    label: e.sev==="high"?"要対応":e.sev==="mid"?"注視":"参考",
+    t:`${e.comp}: ${e.title}`
+  }));
+  const action = alerts.length
+    ? `要対応の変化が <b>${alerts.length} 件</b> あります。影響の大きいものから提案・入札対応の要否を判断し、次週の動きを継続監視してください。`
+    : `今週は高インパクトの変化は検知されていません。継続監視で変化の初動を捉える体制を維持しましょう。`;
+  return {lead, items, action};
+}
+
+/* ============ レンダリング ============ */
+function catLabel(c){return {CR:"CR",TD:"TD",KW:"KW",LP:"LP",NEWS:"ニュース"}[c]||c;}
+function sevLabel(s){return {high:"要対応",mid:"注視",low:"参考"}[s];}
+function labelOf(t){return {add:"新規",chg:"変更",rm:"縮小",info:"注視"}[t]||"—";}
+
+function renderWeekSel(){
+  const sel=$("#weekSel");
+  sel.innerHTML = store.order.map(k=>`<option value="${esc(k)}">${esc(store.weeks[k].label)}</option>`).join("");
+  if(!store.order.includes(state.week)) state.week=store.order[0];
+  sel.value=state.week;
+}
+function renderCompChips(){
+  const comps=new Set();
+  store.order.forEach(k=>store.weeks[k].events.forEach(e=>comps.add(e.comp)));
+  const list=[...comps];
+  $("#compChips").innerHTML =
+    `<span class="chip ${state.comp==="all"?"on":""}" data-comp="all">すべて</span>` +
+    list.map(c=>`<span class="chip ${state.comp===c?"on":""}" data-comp="${esc(c)}">${esc(c)}</span>`).join("");
+}
 function renderKpis(){
-  const k = DATA[state.week].kpis;
-  const cards = [
-    {lbl:"監視中の競合", val:k.competitors, sub:"3業種横断で自動追跡", dot:"var(--info)"},
-    {lbl:"検知した変化点", val:k.changes, sub:"先週スナップショット比", dot:"var(--accent)"},
-    {lbl:"新規CR", val:k.newCR, sub:"今週投下されたクリエイティブ", dot:"var(--add)"},
+  const k=store.weeks[state.week].kpis;
+  const cards=[
+    {lbl:"監視中の競合", val:k.competitors, sub:"データ横断で自動追跡", dot:"var(--info)"},
+    {lbl:"検知した変化点", val:k.changes, sub:"選択中の週の合計", dot:"var(--accent)"},
+    {lbl:"新規CR", val:k.newCR, sub:"クリエイティブの変化", dot:"var(--add)"},
     {lbl:"要対応アラート", val:k.alerts, sub:"高インパクトの変化", dot:"var(--rm)"},
   ];
   $("#kpis").innerHTML = cards.map(c=>`
     <div class="kpi">
       <div class="lbl"><span class="dot" style="background:${c.dot}"></span>${c.lbl}</div>
-      <div class="val">${c.val}<small> 件</small></div>
+      <div class="val tnum">${c.val}<small> 件</small></div>
       <div class="sub">${c.sub}</div>
     </div>`).join("");
 }
-
 function renderAI(){
-  const s = DATA[state.week].summary;
+  const s=store.weeks[state.week].summary;
   $("#aiPanel").innerHTML = `
     <div class="ai-head">
       <span class="spark">✨</span><b>AIサマリー</b>
-      <span class="tag">自動生成 ・ 週次</span>
+      <span class="tag">${isDemo?"デモ":"読み込みデータから生成"} ・ 週次</span>
     </div>
     <div class="ai-body">
       <p class="lead">${s.lead}</p>
       <ul class="ai-list">
-        ${s.items.map(i=>`<li><span class="pin ${i.type}">${labelOf(i.type)}</span><span>${i.t}</span></li>`).join("")}
+        ${s.items.map(i=>`<li><span class="pin ${i.type}">${esc(i.label||labelOf(i.type))}</span><span>${i.t}</span></li>`).join("")}
       </ul>
       <div class="action">💡 <b>営業アクション提案:</b> ${s.action}</div>
     </div>`;
 }
-function labelOf(t){return {add:"新規",chg:"変更",rm:"縮小",info:"注視"}[t]||"—";}
-
-function catLabel(c){return {CR:"CR",TD:"TD",KW:"KW",LP:"LP",NEWS:"ニュース"}[c];}
-function sevLabel(s){return {high:"要対応",mid:"注視",low:"参考"}[s];}
-
 function renderFeed(){
-  const all = DATA[state.week].events;
-  const q = state.q.trim();
-  const list = all.filter(e=>{
+  const all=store.weeks[state.week].events;
+  const q=state.q.trim().toLowerCase();
+  const list=all.filter(e=>{
     if(state.cat!=="all" && e.cat!==state.cat) return false;
     if(state.comp!=="all" && e.comp!==state.comp) return false;
     if(q){
-      const hay = (e.title+e.comp+(e.before||"")+(e.after||"")+(e.note||"")+
+      const hay=(e.title+e.comp+(e.before||"")+(e.after||"")+(e.note||"")+
         (e.kwUp||[]).join(" ")+(e.kwDown||[]).join(" ")).toLowerCase();
-      if(!hay.includes(q.toLowerCase())) return false;
+      if(!hay.includes(q)) return false;
     }
     return true;
   });
   $("#feedCount").textContent = `${list.length} 件を表示中 / 全 ${all.length} 件`;
-
-  if(!list.length){ $("#feed").innerHTML = `<div class="empty">条件に一致する変化点はありません。</div>`; return; }
-
+  if(!list.length){ $("#feed").innerHTML=`<div class="empty">条件に一致する変化点はありません。</div>`; return; }
   $("#feed").innerHTML = list.map(e=>{
-    let body = "";
+    let body="";
     if(e.diffType==="kw"){
-      body = `<div class="diff">
+      body=`<div class="diff">
         <div class="col"><div class="h">▲ 入札強化 / 上昇</div>${
           (e.kwUp&&e.kwUp.length)? e.kwUp.map(x=>`<div>・<span class="num-up">${esc(x)}</span></div>`).join(""):'<div style="color:var(--ink-3)">なし</div>'}</div>
         <div class="col"><div class="h">▼ 縮小 / 下落 / 除外</div>${
           (e.kwDown&&e.kwDown.length)? e.kwDown.map(x=>`<div>・<span class="num-down">${esc(x)}</span></div>`).join(""):'<div style="color:var(--ink-3)">なし</div>'}</div>
       </div>`;
     } else {
-      body = `<div class="diff">
+      body=`<div class="diff">
         <div class="col before"><div class="h">先週</div><span class="${e.diffType==='news'?'':'txt-rm'}">${esc(e.before)}</span></div>
         <div class="col"><div class="h">今週</div><span class="${e.diffType==='news'?'':'txt-add'}">${esc(e.after)}</span></div>
       </div>`;
@@ -450,24 +655,64 @@ function renderFeed(){
       <div class="card-head">
         <span class="cat ${e.cat}">${catLabel(e.cat)}</span>
         <span class="comp">${esc(e.comp)}</span>
-        <span class="meta-line">${e.media.map(m=>`<span class="media-tag">${esc(m)}</span>`).join("")}<span>・ ${e.date}</span></span>
+        <span class="meta-line">${e.media.map(m=>`<span class="media-tag">${esc(m)}</span>`).join("")}<span>・ ${esc(e.date)}</span></span>
         <span class="sev ${e.sev}"><span class="dot" style="background:currentColor"></span>${sevLabel(e.sev)}</span>
       </div>
       <div class="card-body">
         <div class="title-chg">${esc(e.title)}</div>
         ${body}
-        <div class="ai-note"><span class="ic">🤖</span><span>${esc(e.note)}</span></div>
+        ${e.note?`<div class="ai-note"><span class="ic">🤖</span><span>${esc(e.note)}</span></div>`:""}
       </div>
     </div>`;
   }).join("");
 }
+function renderUpdated(){
+  const media = isDemo
+    ? "Google / Yahoo! / Meta / LINE / TikTok / YouTube / プレスリリース"
+    : "読み込んだデータの媒体列を使用";
+  $("#updated").textContent =
+    (isDemo ? "デモデータで表示中 ・ " : "読み込みデータで表示中 ・ ")
+    + "監視媒体: " + media;
+}
+function renderAll(){ renderWeekSel(); renderCompChips(); renderKpis(); renderAI(); renderFeed(); renderUpdated(); }
 
-function renderAll(){renderKpis();renderAI();renderFeed();}
+/* ============ データ読み込み ============ */
+function loadText(text){
+  const delim=detectDelim(text);
+  const rows=parseDelimited(text, delim);
+  const built=buildFromRows(rows);
+  store=built; isDemo=false;
+  state.week=store.order[0]; state.cat="all"; state.comp="all"; state.q=""; $("#q").value="";
+  $("#catFilter").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.cat==="all"));
+  renderAll();
+  const n=store.order.reduce((a,k)=>a+store.weeks[k].events.length,0);
+  msg(`読み込み完了: ${store.order.length} 週 / ${n} 件の変化点を反映しました。`, "ok");
+}
+function msg(text, kind){
+  const el=$("#loadMsg"); el.hidden=false; el.textContent=text;
+  el.className = "load-msg" + (kind==="err"?" err":kind==="demo"?" demo":"");
+}
 
-/* events */
-$("#weekSel").addEventListener("change",e=>{state.week=e.target.value;
-  // reset comp/cat filters visually stays; just re-render
-  renderAll();});
+const TEMPLATE =
+`週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落
+2026/07/14週,CR,A社,TikTok;Meta,高,07/14,新CR6本を投下 訴求軸を切替,年収600万以上の求人多数,最短3日で内定,訴求転換の初週。要監視,,
+2026/07/14週,TD,B社,Google,中,07/14,検索広告の見出しを刷新,○○なら□□｜求人多数,20代の転職なら□□｜3分で登録,ターゲットを20代に明確化,,
+2026/07/14週,KW,B社,Google;Yahoo!,高,07/12,指名KW・競合KWの入札を強化,,,当社指名KWは未出稿。防衛入札の要否を判断,A社 評判 (新規);20代 転職 (4.1→1.8),ハイクラス転職 (2.0→3.5)
+2026/07/14週,LP,C社,自社サイト,高,07/13,申込フォームを5→3ステップに短縮,5画面の申込フロー,3画面に短縮(職歴は後日),離脱率の高い項目を後回し。CVR改善狙い,,
+2026/07/14週,ニュース,C社,プレスリリース,中,07/11,新機能をリリース,,生成AIによる新機能を無料提供開始,プロダクト強化。CR訴求に波及の可能性,,
+2026/07/07週,CR,A社,Meta,低,07/09,静止画CRを2本追加,既存2本,年収訴求の静止画を2本追加,前週は年収訴求が主軸,,`;
+
+function downloadTemplate(){
+  const blob=new Blob(["﻿"+TEMPLATE], {type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url; a.download="marutto-competitive-template.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/* ============ イベント ============ */
+$("#weekSel").addEventListener("change",e=>{state.week=e.target.value; renderKpis(); renderAI(); renderFeed();});
 $("#catFilter").addEventListener("click",e=>{
   const c=e.target.closest(".chip"); if(!c)return;
   state.cat=c.dataset.cat;
@@ -476,14 +721,48 @@ $("#catFilter").addEventListener("click",e=>{
 $("#compFilter").addEventListener("click",e=>{
   const c=e.target.closest(".chip"); if(!c)return;
   state.comp=c.dataset.comp;
-  $("#compFilter").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===c));
+  $("#compChips").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===c));
   renderFeed();});
-$("#q").addEventListener("input",e=>{state.q=e.target.value;renderFeed();});
+$("#q").addEventListener("input",e=>{state.q=e.target.value; renderFeed();});
 
-/* theme toggle */
+$("#csvFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ loadText(rd.result); }catch(err){ msg("読み込みエラー: "+err.message,"err"); } };
+  rd.onerror=()=>msg("ファイルを読めませんでした。","err");
+  rd.readAsText(f,"utf-8");
+  e.target.value="";
+});
+$("#tplBtn").addEventListener("click",downloadTemplate);
+$("#resetBtn").addEventListener("click",()=>{
+  store=DEMO; isDemo=true; state.week=store.order[0]; state.cat="all"; state.comp="all"; state.q=""; $("#q").value="";
+  $("#catFilter").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.cat==="all"));
+  renderAll(); msg("デモデータに戻しました。","demo");
+});
+
+/* paste modal */
+$("#pasteBtn").addEventListener("click",()=>{$("#modal").hidden=false; $("#pasteArea").focus();});
+$("#modalX").addEventListener("click",()=>{$("#modal").hidden=true;});
+$("#modal").addEventListener("click",e=>{ if(e.target.id==="modal") $("#modal").hidden=true; });
+$("#pasteTpl").addEventListener("click",()=>{$("#pasteArea").value=TEMPLATE;});
+$("#pasteLoad").addEventListener("click",()=>{
+  const t=$("#pasteArea").value.trim();
+  if(!t){ msg("貼り付けられたデータが空です。","err"); return; }
+  try{ loadText(t); $("#modal").hidden=true; }
+  catch(err){ msg("読み込みエラー: "+err.message,"err"); }
+});
+
+/* subject label */
+$("#subj").addEventListener("input",e=>{
+  const v=e.target.value.trim();
+  const pill=$("#subjPill");
+  if(v){ pill.hidden=false; pill.textContent=v; } else pill.hidden=true;
+});
+
+/* theme */
 $("#themeBtn").addEventListener("click",()=>{
   const cur=document.documentElement.getAttribute("data-theme");
-  const next = cur==="dark" ? "light" : cur==="light" ? "dark" :
+  const next=cur==="dark"?"light":cur==="light"?"dark":
     (matchMedia("(prefers-color-scheme:dark)").matches?"light":"dark");
   document.documentElement.setAttribute("data-theme",next);
 });
