@@ -290,6 +290,18 @@
   .td-tag{font-size:10.5px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;display:inline-block;margin:1px 0}
   .kwok{color:var(--add);font-weight:800} .kwng{color:var(--chg);font-weight:800}
 
+  /* LP作成アイデア */
+  .ideas{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .idea{border:1.5px solid var(--line);border-radius:14px;padding:13px 15px;background:var(--panel-2)}
+  .idea-h{font-weight:800;font-size:13.5px;display:flex;align-items:center;gap:9px;margin-bottom:8px;line-height:1.4}
+  .idea-no{flex:none;width:24px;height:24px;border-radius:8px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:12px}
+  .idea-body{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-2)}
+  .idea-body b{color:var(--ink-3);font-weight:700;font-size:10.5px;display:inline-block;margin-right:4px}
+  .idea-diff{color:var(--accent);font-weight:600}
+  .lp-url{font-size:10.5px;margin-top:3px;word-break:break-all}
+  .lp-url a{color:var(--info);text-decoration:none}
+  .lp-url a:hover{text-decoration:underline}
+
   /* modal */
   .modal{position:fixed;inset:0;background:rgba(10,12,16,.55);display:grid;place-items:center;z-index:50;padding:20px}
   .modal[hidden]{display:none}
@@ -1504,9 +1516,160 @@ function downloadTDCSV(){
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
+/* ===== LP分析（競合LPの把握 → 自社LP企画） ===== */
+const LP_TYPES=[
+  {key:"area",   label:"エリア特化型", re:/東京|大阪|区|市|エリア|地域|沿線|駅|全国/},
+  {key:"bukken", label:"物件名特化型", re:/パークハウス|プラウド|ブリリア|ザ・|マンション名|分譲/},
+  {key:"assess", label:"無料査定型",   re:/査定|いくら|価値|見積|評価/},
+  {key:"souzoku",label:"相続・空き家型", re:/相続|空き家|住み替え|離婚/},
+  {key:"cost",   label:"費用・税金型", re:/税|費用|諸費用|手数料/},
+  {key:"speed",  label:"スピード・手軽型", re:/最短|即日|\d+\s*(分|秒|日)|かんたん|簡単/},
+  {key:"timing", label:"売り時・相場型", re:/売り時|今|相場|市場|高水準|好条件/},
+  {key:"trust",  label:"実績・信頼型",  re:/実績|事例|選ばれ|No\.?1|安心|信頼|直営|ネットワーク/},
+];
+const LP_ELEMENTS=[
+  {key:"free",   label:"無料査定・料金明示", re:/無料|0円|料金/},
+  {key:"proof",  label:"証拠(実績・事例・声)", re:/実績|事例|お客様の声|口コミ|No\.?1|多数|万件/},
+  {key:"speed",  label:"かんたん入力・スピード", re:/最短|即日|\d+\s*(分|秒)|かんたん|簡単|入力/},
+  {key:"price",  label:"高く売る・相場提示", re:/高く|高値|相場|価格|好条件/},
+  {key:"trust",  label:"安心・信頼・グループ", re:/安心|信頼|大手|グループ|直営|プロ|公式/},
+  {key:"secret", label:"秘密厳守・匿名", re:/秘密|匿名|バレ|内緒/},
+  {key:"online", label:"オンライン完結・非対面", re:/オンライン|来店不要|訪問なし|非対面|Web完結/},
+  {key:"area",   label:"エリア・地域密着", re:/地域|エリア|地元|全国|ネットワーク/},
+  {key:"support",label:"手厚いサポート・相談", re:/サポート|相談|専任|担当|寄り添|ご紹介/},
+];
+function lpParts(e){
+  const title=(e.title||"").replace(/^誘導LP:\s*/,"");
+  const url=e.after||"";
+  const note=e.note||"";
+  const desc=(note.match(/説明:\s*([\s\S]*?)。?\s*\(出典/)||[])[1]||"";
+  const cr=Number((note.match(/CR数(\d+)/)||[])[1]||0);
+  const text=`${title} ${desc} ${url}`;
+  const types=LP_TYPES.filter(t=>t.re.test(text));
+  const tags=LP_ELEMENTS.filter(el=>el.re.test(`${title} ${desc}`));
+  return {title,url,desc,cr,imp:e.metric||0,self:/自社/.test(e.comp),comp:e.comp,types,tags};
+}
+function lpData(){
+  return (store.weeks[state.week].events||[]).filter(e=>e.cat==="LP").map(lpParts).sort((a,b)=>b.imp-a.imp);
+}
+function lpTypeDist(items){
+  return LP_TYPES.map(t=>{
+    const arr=items.filter(x=>x.types.some(y=>y.key===t.key));
+    const selfN=arr.filter(x=>x.self).length, compN=arr.filter(x=>!x.self).length;
+    const imp=arr.reduce((a,x)=>a+x.imp,0);
+    return {t, n:arr.length, selfN, compN, imp, gap:selfN===0&&compN>0};
+  }).sort((a,b)=>b.imp-a.imp);
+}
+function lpIdeas(items){
+  const usp=/三菱地所/.test(($("#subj").value||"")) ? "三菱地所グループ" : "自社";
+  const dist=lpTypeDist(items);
+  const has=k=>dist.find(d=>d.t.key===k&&d.n>0);
+  const ideas=[];
+  // 競合が強い型 → 自社USPで対抗、競合が無い型 → 独自で先行
+  ideas.push({name:"実績・信頼で選ばせる『安心売却』LP", kw:"不動産売却 / マンション売却", fv:`${usp}の成約実績No.1級・"煽らない"安心の売却`, must:"成約事例・お客様の声・担当者の顔・グループの信頼", diff:`競合の「今が売り時」煽りと対比し、${usp}の実績・信頼で安心を訴求`});
+  ideas.push({name:"エリア特化 無料査定LP", kw:"{地域} マンション売却 / {地域} 不動産査定", fv:`{地域}の相場がわかる・${usp}の地域密着で無料査定`, must:"エリア相場・地域の成約事例・簡単査定フォーム", diff:"競合の全国型に対し、地域名×相場×実績で刈り取り"});
+  ideas.push({name:"分譲マンション名 特化LP", kw:"{物件名}（パークハウス等） 売却", fv:`{物件名}の売却は${usp}へ・グループ分譲物件の知見`, must:"物件別の相場・過去成約・お部屋番号査定", diff:"自社が既に面を取る物件名KWをLPで刈り切る"});
+  ideas.push({name:"相続・空き家 売却の専門LP", kw:"相続 不動産 売却 / 空き家 売却", fv:"相続・空き家の不安に寄り添う、まずは無料相談", must:"手続きの流れ・専門家紹介・税金の解説・ワンストップ", diff:"競合が手薄な相続領域を専門LPで先行"});
+  ideas.push({name:"費用・税金まるわかりLP", kw:"マンション売却 税金 / 不動産売却 費用", fv:"売却の税金・諸費用の最適解を提示", must:"費用シミュレーション・専門家紹介・チェックリスト", diff:`${usp}の総合力で"損しない売却"を訴求`});
+  ideas.push({name:"かんたん60秒 スピード査定LP", kw:"不動産査定 / マンション 査定", fv:"60秒入力・オンライン完結の無料査定", must:"入力の手軽さ・匿名OK・すぐ結果", diff:"競合と同じ査定でも入力体験と安心感で差別化"});
+  // 競合が強く出している型を上位に
+  ideas.sort((a,b)=>{
+    const ai=dist.findIndex(d=>a.name.includes(d.t.label.replace(/型$/,"")));
+    return 0;
+  });
+  return ideas;
+}
+function renderLP(){
+  updateDiffBar(null);
+  let items=lpData();
+  const q=state.q.trim().toLowerCase();
+  if(state.comp!=="all") items=items.filter(x=>x.comp===state.comp);
+  if(q) items=items.filter(x=>`${x.title} ${x.desc} ${x.url}`.toLowerCase().includes(q));
+  $("#feedCount").textContent = `LP ${items.length}件を分析`;
+  const dist=lpTypeDist(items);
+  const distHtml=dist.map(d=>`
+    <div class="cov-row ${d.gap?'gap':''}">
+      <div class="cov-lbl">${d.t.label}${d.gap?' <span class="cov-badge">自社なし</span>':''}</div>
+      <div class="cov-bars">
+        <span class="cov-b"><i>競合</i><b class="c" style="width:${Math.min(100,d.compN*40)}%"></b><em>${d.compN}本 ・ 表示${d.imp?fmtNum(d.imp):0}</em></span>
+        <span class="cov-b"><i>自社</i><b class="s" style="width:${Math.min(100,d.selfN*40)}%"></b><em>${d.selfN}本</em></span>
+      </div>
+    </div>`).join("");
+  const ideas=lpIdeas(items);
+  const ideaHtml=ideas.map((x,i)=>`
+    <div class="idea">
+      <div class="idea-h"><span class="idea-no">${i+1}</span>${esc(x.name)}</div>
+      <div class="idea-body">
+        <div><b>想定KW</b> ${esc(x.kw)}</div>
+        <div><b>FV(ファーストビュー)</b> ${esc(x.fv)}</div>
+        <div><b>必須要素</b> ${esc(x.must)}</div>
+        <div><b>差別化</b> <span class="idea-diff">${esc(x.diff)}</span></div>
+      </div>
+    </div>`).join("");
+  const rows = items.length ? items.map(x=>`
+    <tr>
+      <td>${x.self?'<span class="sig-own self">自社</span>':'<span class="sig-own comp">競合</span>'}</td>
+      <td>${x.types.map(t=>`<span class="td-tag">${t.label}</span>`).join(" ")||'<span style="color:var(--ink-3)">—</span>'}</td>
+      <td class="sig-kw">${esc(x.title)}<div class="td-desc">${esc(x.desc||"—")}</div><div class="lp-url"><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.url)}</a></div></td>
+      <td class="tnum">${x.imp?fmtNum(x.imp):"—"}</td>
+      <td class="tnum">${x.cr?fmtNum(x.cr):"—"}</td>
+      <td>${x.tags.map(t=>`<span class="td-tag">${t.label}</span>`).join(" ")||'<span style="color:var(--ink-3)">—</span>'}</td>
+    </tr>`).join("") : `<tr><td colspan="6" class="empty" style="padding:24px">LPデータがありません。ADクロールのlanding_pageを読み込むと分析できます。</td></tr>`;
+  $("#feed").innerHTML=`
+    <div class="td-board">
+      <div class="td-sec">
+        <div class="td-h">🗂 競合LPのタイプ分布<span class="hint">表示回数順。「自社なし」＝競合は出しているが自社に無いLPタイプ＝作成候補</span></div>
+        <div class="cov">${distHtml}</div>
+      </div>
+      <div class="td-sec">
+        <div class="td-h">💡 LP作成アイデア（新規LP企画案）<span class="hint">競合のタイプ×自社の強みから、作るべきLPの企画たたき台</span>
+          <span class="sig-actions"><button class="tb-btn" id="lpCopy">📋 文章でコピー</button><button class="tb-btn" id="lpCsv">⬇ CSV</button></span>
+        </div>
+        <div class="ideas">${ideaHtml}</div>
+      </div>
+      <div class="td-sec">
+        <div class="td-h">📋 競合LP一覧<span class="hint">表示回数順・LPタイプ・構成要素・誘導URL</span></div>
+        <div class="sigtable-wrap">
+          <table class="sigtable">
+            <thead><tr><th>対象</th><th>LPタイプ</th><th>タイトル / 説明 / URL</th><th>LP表示回数</th><th>CR数</th><th>構成要素</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  $("#lpCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(buildLPText()); msg("LP分析を文章でコピーしました。","ok"); }catch(_){ msg("コピーに失敗しました。","err"); } };
+  $("#lpCsv").onclick=downloadLPCSV;
+}
+function buildLPText(){
+  let items=lpData(); if(state.comp!=="all") items=items.filter(x=>x.comp===state.comp);
+  const dist=lpTypeDist(items).filter(d=>d.n>0), ideas=lpIdeas(items), w=store.weeks[state.week];
+  const L=[],P=x=>L.push(x);
+  P(`# LP分析 ＆ 作成アイデア`); P(``);
+  P(`**対象週:** ${w.label}　**対象:** ${($("#subj").value||"").trim()}`); P(``);
+  P(`## 競合が出しているLPタイプ（表示回数順）`);
+  dist.forEach(d=>P(`- ${d.t.label}：競合${d.compN}本 / 表示${fmtNum(d.imp)}${d.gap?"（自社なし＝作成候補）":""}`)); P(``);
+  P(`## LP作成アイデア（企画たたき台）`);
+  ideas.forEach((x,i)=>{ P(`### ${i+1}. ${x.name}`); P(`- 想定KW: ${x.kw}`); P(`- FV: ${x.fv}`); P(`- 必須要素: ${x.must}`); P(`- 差別化: ${x.diff}`); P(``); });
+  P(`## 競合LP 上位（参考）`);
+  items.slice(0,8).forEach(x=>P(`- [${x.self?"自社":"競合"}] ${x.title}｜表示${fmtNum(x.imp)}・CR${fmtNum(x.cr)}｜タイプ: ${x.types.map(t=>t.label).join("・")||"—"}`));
+  P(``); P(`— まるっと競合分析くん ／ LP分析`);
+  return L.join("\n");
+}
+function downloadLPCSV(){
+  let items=lpData(); if(state.comp!=="all") items=items.filter(x=>x.comp===state.comp);
+  const head="週,対象,LPタイプ,タイトル,説明,LP表示回数,CR数,構成要素,URL";
+  const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+  const lines=[head,...items.map(x=>[state.week,x.self?"自社":"競合",x.types.map(t=>t.label).join("・"),x.title,x.desc,x.imp,x.cr,x.tags.map(t=>t.label).join("・"),x.url].map(q).join(","))];
+  const blob=new Blob(["﻿"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url; a.download=`lp-analysis_${(state.week||"week").replace(/[\\/:*?"<>|]/g,"-")}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
 function renderFeed(){
   if(state.cat==="KWSIG"){ renderSignals(); return; }
   if(state.cat==="TD"){ renderTD(); return; }
+  if(state.cat==="LP"){ renderLP(); return; }
   const all=store.weeks[state.week].events;
   const d=diffOf();
   updateDiffBar(d);
