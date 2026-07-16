@@ -345,6 +345,7 @@
       <div class="side-group">
         <div class="side-label">対象週</div>
         <select id="weekSel" aria-label="対象週"></select>
+        <button class="side-btn" id="autoCmpBtn" aria-pressed="false" title="選択中の週を、その前の週と自動で差分比較します">🔁 前週と自動比較：OFF</button>
       </div>
 
       <div class="side-group side-nav" id="catFilter">
@@ -364,7 +365,8 @@
 
       <div class="side-group">
         <div class="side-label">データ</div>
-        <label class="side-btn">📤 CSV読み込み<input type="file" id="csvFile" accept=".csv,.tsv,.txt" hidden></label>
+        <label class="side-btn">📤 CSV読み込み（置換）<input type="file" id="csvFile" accept=".csv,.tsv,.txt" hidden></label>
+        <label class="side-btn" title="今週分のCSVを既存データに足して、過去週を貯めていけます">➕ 週を追加読み込み<input type="file" id="addFile" accept=".csv,.tsv,.txt" hidden></label>
         <button class="side-btn" id="pasteBtn">📋 貼り付けで読み込み</button>
         <label class="side-btn" title="前週のCSVを読み込むと、今週との差分を表示します">📎 前週CSV（差分）<input type="file" id="baseFile" accept=".csv,.tsv,.txt" hidden></label>
         <button class="side-btn primary" id="reportBtn">📄 レポート出力（社内用）</button>
@@ -647,7 +649,7 @@ const DEFAULT_CSV = `
 2026/07/14週,TD,住友不動産,リスティング(Google/Yahoo),中,2026-07-14,広告見出し: 住友不動産/積極採用中,,住友不動産/積極採用中 ／ 事務職も募集中 — 【営業経験者歓迎】異業種転職者が多数在籍。未経験でも高年収を目指せます。 戸建やリフォームの営業だけ…,Keywordmap取込。想定流入数0・1KWで表示。(出典: Keywordmap),,,,,TD-住友不動産/積極採用中,想定流入数,0
 `;
 const DEFAULT_SUBJECT = "三菱地所ハウスネット";
-const state = {week:null, cat:"all", comp:"all", q:""};
+const state = {week:null, cat:"all", comp:"all", q:"", autoCompare:false};
 
 const $ = s => document.querySelector(s);
 function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
@@ -675,8 +677,58 @@ function updateDiffBar(d){
     +`<span class="d-keep">↔ 継続 ${d.keepN}</span>`
     +`<span class="d-gone">⚠ 消滅 ${d.gone.length}</span>`
     +`<button class="clear" id="diffClear">比較を解除</button>`;
-  $("#diffClear").onclick=()=>{ baseline=null; renderFeed(); };
+  $("#diffClear").onclick=()=>{ baseline=null; state.autoCompare=false; syncAutoBtn(); renderFeed(); };
 }
+
+/* ===== 週の並び・マージ・履歴 ===== */
+function weekSortKey(k){
+  let m=String(k).match(/(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})/);
+  if(m) return m[1]+m[2].padStart(2,"0")+m[3].padStart(2,"0");
+  m=String(k).match(/(\d{4})[/\-.](\d{1,2})/);
+  if(m) return m[1]+m[2].padStart(2,"0")+"00";
+  return String(k);
+}
+function relabelWeeks(st){
+  st.order.sort((a,b)=> weekSortKey(b).localeCompare(weekSortKey(a)));  // 新しい順
+  st.order.forEach((k,i)=>{ st.weeks[k].label = k + (i===0?"（最新）":""); });
+  return st;
+}
+function mergeInto(base, add){
+  add.order.forEach(k=>{
+    if(!base.weeks[k]) base.order.push(k);
+    base.weeks[k]=add.weeks[k];   // 同じ週キーは上書き（最新の取込を優先）
+  });
+  return relabelWeeks(base);
+}
+function makeBaseline(events, label){
+  const byKey=new Map(); events.forEach(e=>byKey.set(keyOf(e),e));
+  return { keys:new Set(events.map(keyOf)), events, byKey, label };
+}
+/* 前週と自動比較 */
+function applyAutoCompare(){
+  if(!state.autoCompare){ return; }
+  const i=store.order.indexOf(state.week);
+  const prev = (i>=0) ? store.order[i+1] : null;   // order は新しい順なので +1 が前週
+  baseline = prev ? makeBaseline(store.weeks[prev].events, store.weeks[prev].label) : null;
+}
+function syncAutoBtn(){
+  const b=$("#autoCmpBtn"); if(!b) return;
+  b.classList.toggle("primary", !!state.autoCompare);
+  b.setAttribute("aria-pressed", state.autoCompare?"true":"false");
+  b.textContent = state.autoCompare ? "🔁 前週と自動比較：ON" : "🔁 前週と自動比較：OFF";
+}
+/* ブラウザ保存（貯めた週を保持） */
+const LS_KEY="marutto_store_v1";
+function persist(){
+  try{ localStorage.setItem(LS_KEY, JSON.stringify({order:store.order, weeks:store.weeks, subject:($("#subj")?.value||"")})); }catch(_){}
+}
+function restore(){
+  try{
+    const raw=localStorage.getItem(LS_KEY); if(!raw) return null;
+    const o=JSON.parse(raw); if(!o||!o.order||!o.weeks) return null; return o;
+  }catch(_){ return null; }
+}
+function clearPersist(){ try{ localStorage.removeItem(LS_KEY); }catch(_){} }
 
 /* ============ CSV / TSV パース ============ */
 function detectDelim(text){
@@ -781,7 +833,7 @@ function buildFromRows(rows){
   order.forEach((wk,wi)=>{
     const evs=byWeek[wk].events;
     weeks[wk]={
-      label: wk + (wi===0? "（最新）":""),
+      label: wk,
       kpis:{
         competitors: compCount,
         changes: evs.length,
@@ -1145,26 +1197,34 @@ function renderAll(){ renderWeekSel(); renderCompChips(); renderKpis(); renderAI
 
 /* 初期表示（三菱地所ハウスネット様の実データ） */
 function applyDefault(){
-  store = buildFromRows(parseDelimited(DEFAULT_CSV, ","));
-  isDemo = true; baseline=null;
+  store = relabelWeeks(buildFromRows(parseDelimited(DEFAULT_CSV, ",")));
+  isDemo = true; baseline=null; state.autoCompare=false;
   state.week=store.order[0]; state.cat="all"; state.comp="all"; state.q="";
   const qEl=$("#q"); if(qEl) qEl.value="";
   $("#catFilter").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.cat==="all"));
   const subj=$("#subj"); if(subj){ subj.value=DEFAULT_SUBJECT; const pill=$("#subjPill"); if(pill){ pill.hidden=false; pill.textContent=DEFAULT_SUBJECT; } }
-  renderAll();
+  syncAutoBtn(); renderAll();
 }
 
 /* ============ データ読み込み ============ */
-function loadText(text){
-  const delim=detectDelim(text);
-  const rows=parseDelimited(text, delim);
-  const built=buildFromRows(rows);
-  store=built; isDemo=false;
+function loadText(text){   // 置き換え読み込み（新しいデータセットに差し替え）
+  const built=relabelWeeks(buildFromRows(parseDelimited(text, detectDelim(text))));
+  store=built; isDemo=false; baseline=null;
   state.week=store.order[0]; state.cat="all"; state.comp="all"; state.q=""; $("#q").value="";
   $("#catFilter").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.cat==="all"));
-  renderAll();
+  if(state.autoCompare) applyAutoCompare();
+  syncAutoBtn(); renderAll(); persist();
   const n=store.order.reduce((a,k)=>a+store.weeks[k].events.length,0);
-  msg(`読み込み完了: ${store.order.length} 週 / ${n} 件の変化点を反映しました。`, "ok");
+  msg(`読み込み完了: ${store.order.length} 週 / ${n} 件を反映しました。`, "ok");
+}
+function addWeeks(text){   // 追加読み込み（既存に週をマージして履歴を貯める）
+  const built=buildFromRows(parseDelimited(text, detectDelim(text)));
+  mergeInto(store, built);      // 既存（初期データ含む）はそのままに週を追加
+  isDemo=false;
+  state.week=store.order[0];    // 最新へ
+  if(state.autoCompare) applyAutoCompare();
+  syncAutoBtn(); renderAll(); persist();
+  msg(`追加読み込み完了: ${built.order.length}週分を取り込み（合計 ${store.order.length}週）。週セレクタで過去週を切替できます。`, "ok");
 }
 function msg(text, kind){
   const el=$("#loadMsg"); el.hidden=false; el.textContent=text;
@@ -1190,7 +1250,7 @@ function downloadTemplate(){
 }
 
 /* ============ イベント ============ */
-$("#weekSel").addEventListener("change",e=>{state.week=e.target.value; renderKpis(); renderAI(); renderFeed();});
+$("#weekSel").addEventListener("change",e=>{state.week=e.target.value; if(state.autoCompare) applyAutoCompare(); renderKpis(); renderAI(); renderFeed();});
 $("#catFilter").addEventListener("click",e=>{
   const c=e.target.closest(".chip"); if(!c)return;
   state.cat=c.dataset.cat;
@@ -1212,15 +1272,27 @@ $("#csvFile").addEventListener("change",e=>{
   e.target.value="";
 });
 $("#tplBtn").addEventListener("click",downloadTemplate);
-$("#resetBtn").addEventListener("click",()=>{ applyDefault(); msg("初期表示（三菱地所ハウスネット）に戻しました。","demo"); });
+$("#resetBtn").addEventListener("click",()=>{ clearPersist(); applyDefault(); msg("初期表示（三菱地所ハウスネット）に戻しました。保存した履歴も消去しました。","demo"); });
+$("#addFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ addWeeks(rd.result); }catch(err){ msg("追加読み込みエラー: "+err.message,"err"); } };
+  rd.onerror=()=>msg("ファイルを読めませんでした。","err");
+  rd.readAsText(f,"utf-8"); e.target.value="";
+});
+$("#autoCmpBtn").addEventListener("click",()=>{
+  state.autoCompare=!state.autoCompare;
+  if(state.autoCompare) applyAutoCompare(); else baseline=null;
+  syncAutoBtn(); renderFeed();
+});
 
 /* 前週CSV(差分比較) */
 function loadBaseline(text){
   const built=buildFromRows(parseDelimited(text, detectDelim(text)));
   const events=built.order.flatMap(k=>built.weeks[k].events);
   if(!events.length) throw new Error("前週データに有効な行がありません。");
-  const byKey=new Map(); events.forEach(e=>byKey.set(keyOf(e),e));
-  baseline={ keys:new Set(events.map(keyOf)), events, byKey, label:built.weeks[built.order[0]].label };
+  state.autoCompare=false; syncAutoBtn();
+  baseline=makeBaseline(events, built.weeks[built.order[0]].label);
   renderFeed();
   msg(`前週データを読み込みました（${events.length}件）。今週との差分を表示中です。`, "ok");
 }
@@ -1292,7 +1364,20 @@ $("#themeBtn").addEventListener("click",()=>{
   document.documentElement.setAttribute("data-theme",next);
 });
 
-applyDefault();
+/* 起動: 保存済み履歴があれば復元、なければ初期表示 */
+(function boot(){
+  const saved=restore();
+  if(saved && saved.order && saved.order.length){
+    store={order:saved.order, weeks:saved.weeks}; isDemo=false; baseline=null; state.autoCompare=false;
+    relabelWeeks(store);
+    state.week=store.order[0]; state.cat="all"; state.comp="all"; state.q="";
+    const subj=$("#subj"); if(subj){ subj.value=saved.subject||DEFAULT_SUBJECT; const pill=$("#subjPill"); if(pill && subj.value){ pill.hidden=false; pill.textContent=subj.value; } }
+    syncAutoBtn(); renderAll();
+    msg(`保存済みデータを復元しました（${store.order.length}週）。初期表示に戻すには「初期表示に戻す」を押してください。`,"demo");
+  } else {
+    applyDefault();
+  }
+})();
 </script>
 </body>
 </html>
