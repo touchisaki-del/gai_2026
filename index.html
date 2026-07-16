@@ -261,15 +261,62 @@
   footer .axes span{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 12px;color:var(--ink-2)}
 
   @media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.tb-right{margin-left:0;width:100%}.subj-input{flex:1}}
+
+  /* ===== サイドバー + メイン レイアウト ===== */
+  .app{display:flex;min-height:100vh;align-items:stretch}
+  .sidebar{width:254px;flex:none;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;
+    padding:16px 14px;gap:8px;color:#c6d0df;
+    background:linear-gradient(180deg,#213152 0%,#1b2740 62%,#1a2338 100%);
+    box-shadow:2px 0 22px rgba(0,0,0,.14);z-index:5}
+  .side-brand{display:flex;align-items:center;gap:11px;padding:6px 6px 12px}
+  .side-brand .logo{width:46px;height:46px;border-radius:16px}
+  .side-brand .logo svg{width:34px;height:34px}
+  .side-name{min-width:0}
+  .side-title{font-weight:800;font-size:14.5px;color:#fff;line-height:1.25}
+  .side-brand .subj-pill{margin-top:5px;display:inline-block}
+  .side-scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:15px;padding-right:2px}
+  .side-scroll::-webkit-scrollbar{width:6px}
+  .side-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:6px}
+  .side-group{display:flex;flex-direction:column;gap:4px}
+  .side-label{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:#7f8caa;font-weight:800;padding:2px 10px;margin-top:2px}
+  .sidebar select{width:100%;background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:9px 11px;font-size:12.5px;cursor:pointer}
+  .sidebar select option{color:#111}
+  .sidebar .side-nav .chip{display:flex;align-items:center;gap:8px;width:100%;justify-content:flex-start;
+    padding:9px 12px;border-radius:12px;border:1.5px solid transparent;background:transparent;color:#c6d0df;
+    font-size:12.5px;font-weight:600;transform:none;box-shadow:none;white-space:normal;line-height:1.35;text-align:left}
+  .sidebar .side-nav .chip:hover{background:rgba(255,255,255,.07);color:#fff;border-color:transparent;transform:none}
+  .sidebar .side-nav .chip.on{background:var(--accent);color:#fff;border-color:transparent;box-shadow:0 5px 14px rgba(31,163,163,.42)}
+  .side-btn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:9px 12px;border-radius:12px;
+    border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#dbe3ef;font-size:12.5px;font-weight:600;
+    cursor:pointer;font-family:inherit;transition:.12s}
+  .side-btn:hover{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.22)}
+  .side-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .side-btn.primary:hover{opacity:.92}
+  .side-foot{display:flex;align-items:center;gap:10px;padding:12px 6px 2px;border-top:1px solid rgba(255,255,255,.08)}
+  .side-ver{font-size:11px;color:#7f8caa}
+  .sidebar .theme-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18)}
+
+  .main{flex:1;min-width:0;padding:22px 26px 60px;max-width:1320px}
+  .main-top{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+  .mt-titles{flex:1;min-width:0}
+  .mt-h1{margin:0;font-size:19px;font-weight:800;letter-spacing:.01em}
+  .main-top .updated{margin:5px 0 0}
+  .mt-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+  @media (max-width:900px){
+    .app{flex-direction:column}
+    .sidebar{width:auto;height:auto;position:static;box-shadow:none}
+    .side-scroll{overflow:visible}
+    .main{padding:18px 16px 50px}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-
-  <header class="top">
-    <span class="spark-deco s1">✦</span><span class="spark-deco s2">✦</span><span class="spark-deco s3">●</span>
-    <div class="logo" aria-label="まるっと競合分析くん マスコット">
-      <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
+<div class="app">
+  <aside class="sidebar">
+    <div class="side-brand">
+      <div class="logo" aria-label="まるっと競合分析くん マスコット">
+        <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
         <ellipse cx="24" cy="55" rx="9" ry="4" fill="#3aa6a6" opacity=".5"/>
         <ellipse cx="40" cy="55" rx="9" ry="4" fill="#3aa6a6" opacity=".5"/>
         <circle cx="32" cy="30" r="22" fill="#5cc6c6"/>
@@ -287,81 +334,92 @@
           <rect x="10.5" y="10.5" width="3" height="7" rx="1.5" transform="rotate(45 12 14)" fill="#26324f"/>
         </g>
       </svg>
+      </div>
+      <div class="side-name">
+        <div class="side-title">まるっと競合分析くん</div>
+        <span class="subj-pill" id="subjPill" hidden></span>
+      </div>
     </div>
-    <div class="titles">
-      <h1>まるっと競合分析くん <span class="subj-pill" id="subjPill" hidden></span></h1>
-      <p>三菱地所ハウスネット様 競合ウォッチ — 不動産仲介の CR・TD・KW・LP・ニュースを横断集約し、前週との差分をAIが自動要約</p>
+
+    <div class="side-scroll">
+      <div class="side-group">
+        <div class="side-label">対象週</div>
+        <select id="weekSel" aria-label="対象週"></select>
+      </div>
+
+      <div class="side-group side-nav" id="catFilter">
+        <div class="side-label">カテゴリ</div>
+        <span class="chip on" data-cat="all">🗂 すべて</span>
+        <span class="chip" data-cat="CR">🖼 CR ・クリエイティブ</span>
+        <span class="chip" data-cat="TD">🔤 TD ・広告文</span>
+        <span class="chip" data-cat="KW">🔑 KW ・入札/順位</span>
+        <span class="chip" data-cat="LP">📄 LP ・ランディング</span>
+        <span class="chip" data-cat="NEWS">📰 ニュース ・事業動向</span>
+      </div>
+
+      <div class="side-group side-nav" id="compFilter">
+        <div class="side-label">競合</div>
+        <div id="compChips"></div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-label">データ</div>
+        <label class="side-btn">📤 CSV読み込み<input type="file" id="csvFile" accept=".csv,.tsv,.txt" hidden></label>
+        <button class="side-btn" id="pasteBtn">📋 貼り付けで読み込み</button>
+        <label class="side-btn" title="前週のCSVを読み込むと、今週との差分を表示します">📎 前週CSV（差分）<input type="file" id="baseFile" accept=".csv,.tsv,.txt" hidden></label>
+        <button class="side-btn primary" id="reportBtn">📄 レポート出力</button>
+        <button class="side-btn" id="tplBtn">⬇ テンプレートCSV</button>
+        <button class="side-btn" id="resetBtn">↺ 初期表示に戻す</button>
+      </div>
     </div>
-    <div class="top-right">
-      <span class="badge-bu">BU</span>
-      <select id="weekSel" aria-label="対象週"></select>
+
+    <div class="side-foot">
       <button class="theme-btn" id="themeBtn" title="テーマ切替">🌓</button>
+      <span class="side-ver">東地チーム</span>
     </div>
-  </header>
+  </aside>
 
-  <div class="updated" id="updated"></div>
-
-  <!-- data toolbar -->
-  <div class="toolbar">
-    <label class="tb-btn">📤 CSV読み込み<input type="file" id="csvFile" accept=".csv,.tsv,.txt" hidden></label>
-    <button class="tb-btn" id="pasteBtn">📋 貼り付けで読み込み</button>
-    <button class="tb-btn" id="tplBtn">⬇ テンプレートCSV</button>
-    <button class="tb-btn primary" id="reportBtn">📄 レポート出力</button>
-    <label class="tb-btn" title="前週のCSVを読み込むと、今週との差分(新規/継続/消滅)を表示します">📎 前週CSV(差分)<input type="file" id="baseFile" accept=".csv,.tsv,.txt" hidden></label>
-    <button class="tb-btn" id="resetBtn">↺ 初期表示に戻す</button>
-    <div class="tb-right">
-      <input class="subj-input" id="subj" placeholder="対象・案件名" value="三菱地所ハウスネット" />
+  <main class="main">
+    <div class="main-top">
+      <div class="mt-titles">
+        <h1 class="mt-h1">競合ウォッチ ダッシュボード</h1>
+        <div class="updated" id="updated"></div>
+      </div>
+      <div class="mt-right">
+        <input class="subj-input" id="subj" placeholder="対象・案件名" value="三菱地所ハウスネット" />
+        <div class="search"><input id="q" type="search" placeholder="キーワードで絞り込み…" /></div>
+        <span class="badge-bu">BU</span>
+      </div>
     </div>
-  </div>
-  <div class="load-msg" id="loadMsg" hidden></div>
-  <div class="diffbar" id="diffbar" hidden></div>
 
-  <!-- KPI -->
-  <div class="kpis" id="kpis"></div>
+    <div class="load-msg" id="loadMsg" hidden></div>
+    <div class="diffbar" id="diffbar" hidden></div>
 
-  <!-- AI summary -->
-  <div class="section-h">
-    <h2>今週の変化点 AI要約</h2>
-    <span class="hint">先週スナップショットとの差分を自動生成</span>
-    <div class="rule"></div>
-  </div>
-  <div class="ai" id="aiPanel"></div>
+    <div class="kpis" id="kpis"></div>
 
-  <!-- Feed -->
-  <div class="section-h">
-    <h2>検知した変化点</h2>
-    <span class="hint" id="feedCount"></span>
-    <div class="rule"></div>
-  </div>
-
-  <div class="filters" id="catFilter">
-    <span class="flabel">カテゴリ</span>
-    <div class="grp">
-      <span class="chip on" data-cat="all">すべて</span>
-      <span class="chip" data-cat="CR">CR</span>
-      <span class="chip" data-cat="TD">TD</span>
-      <span class="chip" data-cat="KW">KW</span>
-      <span class="chip" data-cat="LP">LP</span>
-      <span class="chip" data-cat="NEWS">ニュース</span>
+    <div class="section-h">
+      <h2>今週の変化点 AI要約</h2>
+      <span class="hint">先週スナップショットとの差分を自動生成</span>
+      <div class="rule"></div>
     </div>
-  </div>
-  <div class="filters" id="compFilter">
-    <span class="flabel">競合</span>
-    <div class="grp" id="compChips"></div>
-    <div class="search"><input id="q" type="search" placeholder="キーワードで絞り込み…" /></div>
-  </div>
+    <div class="ai" id="aiPanel"></div>
 
-  <div class="feed" id="feed"></div>
-
-  <footer>
-    <div class="axes">
-      <span>審査軸① 新規性</span><span>審査軸② 事業インパクト</span>
-      <span>審査軸③ 実現可能性</span><span>審査軸④ 浸透度</span>
+    <div class="section-h">
+      <h2>検知した変化点</h2>
+      <span class="hint" id="feedCount"></span>
+      <div class="rule"></div>
     </div>
-    三菱地所ハウスネット様 競合ウォッチ ・ まるっと競合分析くん ・ 東地チーム ・ Keywordmap／ADクロール／Web収集のデータを横断集約<br/>
-    担当者の誰もが同じ着眼点で競合（住友不動産ほか）を把握し、提案スピードと精度を向上させることを目的としたプロトタイプです。
-  </footer>
+    <div class="feed" id="feed"></div>
 
+    <footer>
+      <div class="axes">
+        <span>審査軸① 新規性</span><span>審査軸② 事業インパクト</span>
+        <span>審査軸③ 実現可能性</span><span>審査軸④ 浸透度</span>
+      </div>
+      三菱地所ハウスネット様 競合ウォッチ ・ まるっと競合分析くん ・ 東地チーム ・ Keywordmap／ADクロール／Web収集のデータを横断集約<br/>
+      担当者の誰もが同じ着眼点で競合（住友不動産ほか）を把握し、提案スピードと精度を向上させることを目的としたプロトタイプです。
+    </footer>
+  </main>
 </div>
 
 <!-- paste modal -->
