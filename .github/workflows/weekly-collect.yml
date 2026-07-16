@@ -1,12 +1,16 @@
-# 週次 競合ニュース自動収集（恒久運用版）
+# 週次 競合ニュース自動収集＋Slack通知（恒久運用版）
 #
 # ★有効化に必要な準備（未設定だと動きません）:
 #   1. リポジトリ Settings > Secrets and variables > Actions に ANTHROPIC_API_KEY を登録
-#   2. Settings > Actions > General > Workflow permissions を "Read and write" に
-#   3. 下の action バージョン/入力は環境に合わせて要確認（初回は手動実行で検証）
+#   2. Slack通知を使う場合は Secret に SLACK_WEBHOOK_URL を登録
+#        （Slack管理画面 > Incoming Webhooks で投稿先チャンネルのURLを発行）
+#   3. ダッシュボードURLを差し替える場合は Variables に DASHBOARD_URL を登録（任意）
+#   4. Settings > Actions > General > Workflow permissions を "Read and write" に
+#   5. 下の action バージョン/入力は環境に合わせて要確認（初回は手動実行で検証）
 #
-# 動作: 毎週月曜 09:12(JST) に競合4社のニュースをWeb収集し、
-#       templates/mec-h_auto_collected.csv に追記してコミット&プッシュする。
+# 動作: 毎週月曜 09:12(JST) に競合(住友不動産)のニュースをWeb収集し、
+#       templates/mec-h_sumitomo.csv に追記してコミット&プッシュ。
+#       そのうえで最新週の「変化点サマリー＋ダッシュボードのリンク」をSlackへ自動投稿する。
 #
 # ※ Claude Code のセッション内 cron はセッション終了で消えるため、
 #    「本当に毎週勝手に動く」運用はこちら(GitHub Actions)が本命です。
@@ -59,3 +63,19 @@ jobs:
           else
             echo "変更なし（今週の新規なし）"
           fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Post weekly digest to Slack
+        if: ${{ always() }}   # 収集に新規が無くても週次ダイジェストは投稿する
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL 未設定のためSlack投稿をスキップ（ドライラン）"
+          fi
+          node templates/slack_digest.mjs templates/mec-h_sumitomo.csv

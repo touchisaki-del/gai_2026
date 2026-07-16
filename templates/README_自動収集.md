@@ -66,3 +66,53 @@ CSV列: 週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今�
 3. 「レポート出力」で社内共有用テキストを配布
 
 ※ 現行の `mec-h_auto_collected.csv` は初回収集ぶん（実在ニュース・出典付き）。CR/KW/TD/LPは含めていない（要ツール連携）。
+
+---
+
+## 週次Slack通知（変化点サマリー＋ダッシュボードのリンク）
+
+週次GitHub Action（`.github/workflows/weekly-collect.yml`）が **ニュース収集 → CSV更新 → コミット** した後に、
+`templates/slack_digest.mjs` が **最新週の変化点サマリー**を組み立てて **Slackへ自動投稿**する。
+
+### 送られる内容（例）
+```
+🔭 まるっと競合分析くん｜週次ダイジェスト
+東地チーム ・ 三菱地所ハウスネット様 ・ 競合ウォッチ
+
+📊 変化点サマリー（対象週: 2026/07/14週｜競合: 住友不動産）
+今週の検知は 20件（要対応 3件）
+  🖼 CR 8  🔤 TD 4  🔑 KW 1  📄 LP 6  📰 ニュース 1
+🎯 KWシグナル  🆕新規 2  📉負け始め 0  🎯好機 0
+  最大コスト: 住友不動産 転職（¥936）
+🖼 CR主要訴求（表示回数順） …
+📰 ニュース …
+
+［📊 ダッシュボードを開く］   ← ボタンでArtifactへ
+```
+
+### 有効化の手順（1回だけ）
+1. **Slack Incoming Webhook を発行**
+   - Slack管理画面 → 「App」→ **Incoming Webhooks** を有効化 → 投稿先チャンネルを選んで **Webhook URL** を発行
+   - 形式: `https://hooks.slack.com/services/T000/B000/xxxxxxxx`
+2. **GitHubにSecretを登録**
+   - リポジトリ Settings → Secrets and variables → Actions → **New repository secret**
+   - Name: `SLACK_WEBHOOK_URL` / Value: 発行したURL
+3. **（任意）ダッシュボードURLを差し替え**
+   - 同じ画面の **Variables** タブ → `DASHBOARD_URL` に Artifact のURLを登録
+   - 未登録なら `slack_digest.mjs` の既定URLが使われる
+4. Actions を手動実行（`workflow_dispatch`）して初回テスト
+
+### 手動・単体でも実行できる
+```bash
+# ドライラン（Webhook未設定なら投稿せず本文を表示）
+node templates/slack_digest.mjs templates/mec-h_sumitomo.csv
+
+# 実際に投稿
+SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..." \
+DASHBOARD_URL="https://claude.ai/code/artifact/xxxx" \
+node templates/slack_digest.mjs templates/mec-h_sumitomo.csv
+```
+
+- `SLACK_WEBHOOK_URL` が無いときは投稿せずに本文を出力するだけ（安全なドライラン）。
+- 週ラベルは自動で最新週を判定。集計は21列スキーマ準拠。
+- 「収集で新規が無かった週」もダイジェストは投稿される（`if: always()`）。不要なら該当ステップを消す。
