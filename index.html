@@ -242,6 +242,28 @@
   .delta.down{color:var(--down);background:var(--rm-bg)}
   .delta.flat{color:var(--ink-3);background:var(--panel-2)}
 
+  /* KWシグナル テーブル */
+  .sigbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .sigbar .grp{display:flex;gap:6px;flex-wrap:wrap}
+  .sigbar .sig-actions{margin-left:auto;display:flex;gap:8px}
+  .sigchip{font-size:12px}
+  .sigtable-wrap{overflow-x:auto;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow)}
+  table.sigtable{width:100%;border-collapse:collapse;font-size:12.5px;min-width:820px}
+  table.sigtable thead th{text-align:left;font-size:11px;color:var(--ink-3);font-weight:700;padding:11px 12px;
+    border-bottom:1.5px solid var(--line);white-space:nowrap;background:var(--panel-2);position:sticky;top:0}
+  table.sigtable td{padding:11px 12px;border-bottom:1px solid var(--line-2);vertical-align:top}
+  table.sigtable tbody tr:hover{background:var(--panel-2)}
+  table.sigtable .tnum{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sig-kw{font-weight:700;color:var(--ink)}
+  .sig-act{color:var(--ink-2);min-width:220px}
+  .sigtag{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;display:inline-block}
+  .sigtag.new{color:var(--add);background:var(--add-bg)}
+  .sigtag.down{color:var(--rm);background:var(--rm-bg)}
+  .sigtag.opp{color:var(--info);background:var(--info-bg)}
+  .sig-own{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px}
+  .sig-own.self{color:var(--accent);background:var(--accent-soft)}
+  .sig-own.comp{color:var(--ink-2);background:var(--panel-2);border:1px solid var(--line-2)}
+
   /* modal */
   .modal{position:fixed;inset:0;background:rgba(10,12,16,.55);display:grid;place-items:center;z-index:50;padding:20px}
   .modal[hidden]{display:none}
@@ -356,6 +378,7 @@
         <span class="chip" data-cat="KW">🔑 KW ・入札/順位</span>
         <span class="chip" data-cat="LP">📄 LP ・ランディング</span>
         <span class="chip" data-cat="NEWS">📰 ニュース ・事業動向</span>
+        <span class="chip" data-cat="KWSIG">🎯 KWシグナル ・運用</span>
       </div>
 
       <div class="side-group side-nav" id="compFilter">
@@ -620,13 +643,73 @@ function playbook(cat){ return PLAYBOOK[cat] || PLAYBOOK.CR; }
 let store = DEMO;               // 現在表示中のデータセット
 let isDemo = true;
 const DEFAULT_CSV = `
-週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値,ID,指標名,指標値
+週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値,ID,指標名,指標値,シグナル,前回順位,今回順位,CPC
 2026/07/14週,KW,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,リスティング出稿KW・掲載順位の変化,,,Keywordmap取込。検知KW81件（上昇/新規81・下落/非表示0／表示は上位12件）。想定集客コスト上位: 売却 マンション（約50.6万円）。(出典: Keywordmap),ザ パーク ハウス 新規表示（→2位）;パークハウス 新規表示（→2位）;売却 マンション 新規表示（→6位）;マンション売却 税 新規表示（→6位）;プラウド成城 新規表示（→1位）;パークハウス文京関口 新規表示（→5位）;ザパークハウス相生山 新規表示（→5位）;渋谷藤和コープ 新規表示（→1位）;四条烏丸クロスマーク 新規表示（→2位）;パークハウス神楽坂 新規表示（→2位）;ザガーデンズ東京王子 新規表示（→5位）;洗足ミナミプラザ 新規表示（→5位）,,,,KW-三菱地所ハウスネット（自社）,想定流入数,2693
 2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: 三菱地所ハウスネット,,三菱地所ハウスネット ／ 安心と信頼の三菱地所グループ — 三菱地所グループの不動産売買仲介サイト。売主様、買主様の安心な不動産取引をサポート。不…,Keywordmap取込。想定流入数571・3KWで表示。(出典: Keywordmap),,,,,TD-三菱地所ハウスネット,想定流入数,571
 2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: パークハウスの売却はこちら | ザ・パークハウス,,パークハウスの売却はこちら | ザ・パークハウス ／ ザ・パークハウスのご売却なら三菱地所の住まいリレー。パークハウスのご売却は三菱地所の住まいリレーへお任せください。 周辺…,Keywordmap取込。想定流入数364・1KWで表示。(出典: Keywordmap),,,,,TD-パークハウスの売却はこちら | ザ・パークハウス,想定流入数,364
 2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: パークハウスの売却はこちら | 【公式】三菱地所の住…,,パークハウスの売却はこちら | 【公式】三菱地所の住まいリレー ／ パークハウスのご売却は三菱地所の住まいリレーへお任せください。 経験と実績を重ねてきた三菱地所グループの安心サービスでお…,Keywordmap取込。想定流入数364・1KWで表示。(出典: Keywordmap),,,,,TD-パークハウスの売却はこちら | 【公式】三菱地所の住まいリレー,想定流入数,364
 2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: プラウド成城,,プラウド成城 ／ 大手不動産会社だから安心 — 査定価格を知りたい方に！マンション・土地・一戸建ての無料査定依頼なら三菱地所の住まいリレー…,Keywordmap取込。想定流入数135・1KWで表示。(出典: Keywordmap),,,,,TD-プラウド成城,想定流入数,135
 2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: 渋谷藤和コープ,,渋谷藤和コープ ／ 【公式】三菱地所の住まいリレー — 三菱地所グループ分譲マンションのご売却は三菱地所の住まいリレーへお任せください。 経…,Keywordmap取込。想定流入数92・1KWで表示。(出典: Keywordmap),,,,,TD-渋谷藤和コープ,想定流入数,92
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-04,売却 マンション,,,🆕新規（自社）｜掲載順位 —→6｜CPC ¥10326｜想定集客コスト ¥505986｜検索Vol 5400。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-売却 マンション,想定集客コスト,505986,new,—,6,10326
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-10,ザ パーク ハウス,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥484｜想定集客コスト ¥176245｜検索Vol 12100。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ザ パーク ハウス,想定集客コスト,176245,new,—,2,484
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-03,パークハウス,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥483｜想定集客コスト ¥175655｜検索Vol 12100。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-パークハウス,想定集客コスト,175655,new,—,2,483
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-04,マンション売却の流れ,,,🆕新規（自社）｜掲載順位 —→4｜CPC ¥2079｜想定集客コスト ¥33270｜検索Vol 720。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-マンション売却の流れ,想定集客コスト,33270,new,—,4,2079
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-21,ブランズ日本橋茅場町,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥453｜想定集客コスト ¥32181｜検索Vol 1000。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ブランズ日本橋茅場町,想定集客コスト,32181,new,—,1,453
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-15,プラウド成城,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥228｜想定集客コスト ¥30827｜検索Vol 1900。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-プラウド成城,想定集客コスト,30827,new,—,1,228
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-01,三菱地所 住まいのリレー,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥509｜想定集客コスト ¥25953｜検索Vol 720。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-三菱地所 住まいのリレー,想定集客コスト,25953,new,—,1,509
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-03,パークハウス千里中央,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥476｜想定集客コスト ¥24295｜検索Vol 720。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-パークハウス千里中央,想定集客コスト,24295,new,—,1,476
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-02,パークハウス神楽坂,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥481｜想定集客コスト ¥18770｜検索Vol 1300。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-パークハウス神楽坂,想定集客コスト,18770,new,—,2,481
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-28,ザパークハウス六番町,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥245｜想定集客コスト ¥15407｜検索Vol 880。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ザパークハウス六番町,想定集客コスト,15407,new,—,1,245
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-02,パークハウス等々力プレイス,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥766｜想定集客コスト ¥13789｜検索Vol 260。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-パークハウス等々力プレイス,想定集客コスト,13789,new,—,1,766
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-03,高槻 不動産,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥491｜想定集客コスト ¥13739｜検索Vol 390。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-高槻 不動産,想定集客コスト,13739,new,—,1,491
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-25,マンション売却 税,,,🆕新規（自社）｜掲載順位 —→6｜CPC ¥419｜想定集客コスト ¥13404｜検索Vol 3600。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-マンション売却 税,想定集客コスト,13404,new,—,6,419
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-13,belista横浜,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥211｜想定集客コスト ¥13288｜検索Vol 880。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-belista横浜,想定集客コスト,13288,new,—,1,211
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-04,不動産売却の流れ,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥594｜想定集客コスト ¥13068｜検索Vol 720。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-不動産売却の流れ,想定集客コスト,13068,new,—,2,594
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-27,四条烏丸クロスマーク,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥228｜想定集客コスト ¥8896｜検索Vol 1300。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-四条烏丸クロスマーク,想定集客コスト,8896,new,—,2,228
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-04,家 売る 方法,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥2151｜想定集客コスト ¥8602｜検索Vol 140。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-家 売る 方法,想定集客コスト,8602,new,—,2,2151
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-02,ザパークハウス 相模大野,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥196｜想定集客コスト ¥8244｜検索Vol 590。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ザパークハウス 相模大野,想定集客コスト,8244,new,—,1,196
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-27,ザパークワンズ芝公園,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥130｜想定集客コスト ¥8188｜検索Vol 880。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ザパークワンズ芝公園,想定集客コスト,8188,new,—,1,130
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-11,クレヴィア 巣鴨,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥121｜想定集客コスト ¥7617｜検索Vol 880。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-クレヴィア 巣鴨,想定集客コスト,7617,new,—,1,121
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-11,コルティーレ山手町,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥225｜想定集客コスト ¥6310｜検索Vol 390。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-コルティーレ山手町,想定集客コスト,6310,new,—,1,225
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-05-31,ザパークハウス相生山,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥372｜想定集客コスト ¥5950｜検索Vol 1600。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ザパークハウス相生山,想定集客コスト,5950,new,—,5,372
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-27,シティハウス浦和常盤,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥224｜想定集客コスト ¥5150｜検索Vol 320。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-シティハウス浦和常盤,想定集客コスト,5150,new,—,1,224
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-04,不動産売買の流れ,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥341｜想定集客コスト ¥5115｜検索Vol 210。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-不動産売買の流れ,想定集客コスト,5115,new,—,1,341
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-02,渋谷藤和コープ,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥55｜想定集客コスト ¥5015｜検索Vol 1300。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-渋谷藤和コープ,想定集客コスト,5015,new,—,1,55
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-15,プラウド綱島,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥223｜想定集客コスト ¥4901｜検索Vol 720。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-プラウド綱島,想定集客コスト,4901,new,—,2,223
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-28,パークハウス文京関口,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥301｜想定集客コスト ¥4819｜検索Vol 1600。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-パークハウス文京関口,想定集客コスト,4819,new,—,5,301
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-28,ザガーデンズ東京王子,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥338｜想定集客コスト ¥4388｜検索Vol 1300。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ザガーデンズ東京王子,想定集客コスト,4388,new,—,5,338
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-02,藤和 護国寺 コープ,,,🆕新規（自社）｜掲載順位 —→4｜CPC ¥269｜想定集客コスト ¥4309｜検索Vol 720。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-藤和 護国寺 コープ,想定集客コスト,4309,new,—,4,269
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-04,マンション 売却 手順,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥1337｜想定集客コスト ¥4011｜検索Vol 110。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-マンション 売却 手順,想定集客コスト,4011,new,—,2,1337
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-12,不動産 売却 タイミング,,,🆕新規（自社）｜掲載順位 —→3｜CPC ¥1295｜想定集客コスト ¥3884｜検索Vol 140。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-不動産 売却 タイミング,想定集客コスト,3884,new,—,3,1295
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-10,マンション 仲介 業者,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥3520｜想定集客コスト ¥3520｜検索Vol 70。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-マンション 仲介 業者,想定集客コスト,3520,new,—,5,3520
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-02,パークハウス学芸大学,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥114｜想定集客コスト ¥3197｜検索Vol 390。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-パークハウス学芸大学,想定集客コスト,3197,new,—,1,114
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-09,不動産 売却 情報,,,🆕新規（自社）｜掲載順位 —→3｜CPC ¥3066｜想定集客コスト ¥3066｜検索Vol 40。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-不動産 売却 情報,想定集客コスト,3066,new,—,3,3066
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-27,マンション 売る 税,,,🆕新規（自社）｜掲載順位 —→4｜CPC ¥505｜想定集客コスト ¥3030｜検索Vol 260。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-マンション 売る 税,想定集客コスト,3030,new,—,4,505
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-28,ルクセンブルグハウス,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥47｜想定集客コスト ¥2983｜検索Vol 880。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ルクセンブルグハウス,想定集客コスト,2983,new,—,1,47
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-19,ラトリエ 吉祥寺,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥222｜想定集客コスト ¥2881｜検索Vol 1300。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ラトリエ 吉祥寺,想定集客コスト,2881,new,—,5,222
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-17,ブリリア 西新,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥239｜想定集客コスト ¥2864｜検索Vol 170。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ブリリア 西新,想定集客コスト,2864,new,—,1,239
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-05-31,パークハウス麻布 笄町,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥273｜想定集客コスト ¥2733｜検索Vol 1000。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-パークハウス麻布 笄町,想定集客コスト,2733,new,—,5,273
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-17,戸建売却 税金,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥414｜想定集客コスト ¥2487｜検索Vol 210。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-戸建売却 税金,想定集客コスト,2487,new,—,2,414
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-02,新百合ヶ丘パークハウスヒルズテラス,,,🆕新規（自社）｜掲載順位 —→3｜CPC ¥153｜想定集客コスト ¥2445｜検索Vol 720。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-新百合ヶ丘パークハウスヒルズテラス,想定集客コスト,2445,new,—,3,153
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-27,パークハウス玉川岡本,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥422｜想定集客コスト ¥2109｜検索Vol 480。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-パークハウス玉川岡本,想定集客コスト,2109,new,—,5,422
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-03,マンション売却 手続き,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥917｜想定集客コスト ¥1834｜検索Vol 70。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-マンション売却 手続き,想定集客コスト,1834,new,—,2,917
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-04,ザパークハウス東陽町,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥75｜想定集客コスト ¥1731｜検索Vol 320。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ザパークハウス東陽町,想定集客コスト,1731,new,—,1,75
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-22,洗足ミナミプラザ,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥131｜想定集客コスト ¥1704｜検索Vol 1300。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-洗足ミナミプラザ,想定集客コスト,1704,new,—,5,131
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-15,ジオ西宮北口 薬師町,,,🆕新規（自社）｜掲載順位 —→1｜CPC ¥108｜想定集客コスト ¥1626｜検索Vol 210。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ジオ西宮北口 薬師町,想定集客コスト,1626,new,—,1,108
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-25,ザパークハウス八田,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥259｜想定集客コスト ¥1554｜検索Vol 590。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ザパークハウス八田,想定集客コスト,1554,new,—,5,259
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-27,マンション売却手続き,,,🆕新規（自社）｜掲載順位 —→3｜CPC ¥750｜想定集客コスト ¥1500｜検索Vol 70。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-マンション売却手続き,想定集客コスト,1500,new,—,3,750
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-22,藤和シティコープ鶴見,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥249｜想定集客コスト ¥1246｜検索Vol 480。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-藤和シティコープ鶴見,想定集客コスト,1246,new,—,5,249
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-05-25,ザ パークハウス アーバンス 中目黒,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥121｜想定集客コスト ¥1092｜検索Vol 880。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ザ パークハウス アーバンス 中目黒,想定集客コスト,1092,new,—,5,121
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-26,マンション売買の税金,,,🆕新規（自社）｜掲載順位 —→4｜CPC ¥217｜想定集客コスト ¥1084｜検索Vol 210。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-マンション売買の税金,想定集客コスト,1084,new,—,4,217
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-27,ジオ西宮北口 瓦林町,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥261｜想定集客コスト ¥1045｜検索Vol 390。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ジオ西宮北口 瓦林町,想定集客コスト,1045,new,—,5,261
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-22,土地売却の流れ,,,🆕新規（自社）｜掲載順位 —→6｜CPC ¥516｜想定集客コスト ¥1033｜検索Vol 260。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-土地売却の流れ,想定集客コスト,1033,new,—,6,516
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-08,マンション 売買 流れ,,,🆕新規（自社）｜掲載順位 —→3｜CPC ¥1030｜想定集客コスト ¥1030｜検索Vol 40。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-マンション 売買 流れ,想定集客コスト,1030,new,—,3,1030
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-21,家 売却 引渡し,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥1011｜想定集客コスト ¥1011｜検索Vol 20。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-家 売却 引渡し,想定集客コスト,1011,new,—,2,1011
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-10,パーク ハウス 南青山 グラン,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥147｜想定集客コスト ¥884｜検索Vol 590。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-パーク ハウス 南青山 グラン,想定集客コスト,884,new,—,5,147
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-19,ポートピアプラザ,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥112｜想定集客コスト ¥784｜検索Vol 720。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ポートピアプラザ,想定集客コスト,784,new,—,5,112
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-02,プラウド鷺宮トレサージュ,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥149｜想定集客コスト ¥743｜検索Vol 170。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-プラウド鷺宮トレサージュ,想定集客コスト,743,new,—,2,149
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-28,ベリスタ溝の口,,,🆕新規（自社）｜掲載順位 —→5｜CPC ¥184｜想定集客コスト ¥551｜検索Vol 320。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-ベリスタ溝の口,想定集客コスト,551,new,—,5,184
+2026/07/14週,KWシグナル,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-06-19,不動産売却 経費,,,🆕新規（自社）｜掲載順位 —→2｜CPC ¥118｜想定集客コスト ¥473｜検索Vol 140。(出典: Keywordmap),,,,,KWSIG-三菱地所ハウスネット（自社）-不動産売却 経費,想定集客コスト,473,new,—,2,118
 2026/07/14週,ニュース,住友不動産,プレスリリース,高,2025/04/01,「住友不動産ステップ」へ商号変更＋購入専門部署を新設,住友不動産販売,住友不動産ステップに商号変更／「ステップ購入エージェンシー」を首都圏5・関西1店に新設,購入検討層の囲い込みを強化。デジタル広告への全面移行・ステップオークションも推進（出典: 住友不動産ステップ公式／日経）,,,,,NEWS-sumitomo-shogo,,
 2026/07/14週,CR,住友不動産,GDN;Yahoo;Microsoft;Facebook;SmartNews,高,2026-07-15,クリエイティブ出稿の全体像,,総CR3698本（画像3403／動画281／カルーセル14）・新規CR3138本・LP1115本（新規LP1041）,ADクロール取込。表示回数約34万回。媒体内訳(CR数): GDN 1096／Yahoo 855／Microsoft 379／Facebook 319／SmartNews 315／Instagram 289。出稿期間 2020-01-22〜2026-07-15。(出典: ADクロール),,,,,CR-summary,表示回数,340495
 2026/07/14週,CR,住友不動産,Microsoft,中,2026-07-15,主要クリエイティブ訴求: 【この二択】あなたはどうする？不動産価格が高水準の今…,,【この二択】あなたはどうする？不動産価格が高水準の今！賢い選択をご提案します,ADクロール取込。表示回数(7日増)809・9クリエイティブ・1媒体。(出典: ADクロール),,,,,CR-【この二択】あなたはどうする？不動産価格が高水準の今！賢い選択をご提案します,表示回数(7日増),809
@@ -647,9 +730,11 @@ const DEFAULT_CSV = `
 2026/07/14週,TD,住友不動産,リスティング(Google/Yahoo),中,2026-07-14,広告見出し: 住友不動産／キャリア採用 - 住友不動産の採用情報 …,,住友不動産／キャリア採用 - 住友不動産の採用情報 - 正社員採用なら ／ 総合デベロッパーとしてビルやマンション開発等幅広く展開。業界トップクラスの安定した事業基盤,Keywordmap取込。想定流入数3・1KWで表示。(出典: Keywordmap),,,,,TD-住友不動産／キャリア採用 - 住友不動産の採用情報 - 正社員採用なら,想定流入数,3
 2026/07/14週,TD,住友不動産,リスティング(Google/Yahoo),中,2026-07-14,広告見出し: 住友不動産の採用情報,,住友不動産の採用情報 ／ 住友不動産／キャリア採用 — 総合デベロッパーとしてビルやマンション開発等幅広く展開。業界トップクラスの安定した事業基盤…,Keywordmap取込。想定流入数3・3KWで表示。(出典: Keywordmap),,,,,TD-住友不動産の採用情報,想定流入数,3
 2026/07/14週,TD,住友不動産,リスティング(Google/Yahoo),中,2026-07-14,広告見出し: 住友不動産/積極採用中,,住友不動産/積極採用中 ／ 事務職も募集中 — 【営業経験者歓迎】異業種転職者が多数在籍。未経験でも高年収を目指せます。 戸建やリフォームの営業だけ…,Keywordmap取込。想定流入数0・1KWで表示。(出典: Keywordmap),,,,,TD-住友不動産/積極採用中,想定流入数,0
+2026/07/14週,KWシグナル,住友不動産,リスティング(Google/Yahoo),中,2026-06-20,住友不動産 転職,,,🆕新規（競合）｜掲載順位 —→5｜CPC ¥312｜想定集客コスト ¥936｜検索Vol 320。(出典: Keywordmap),,,,,KWSIG-住友不動産-住友不動産 転職,想定集客コスト,936,new,—,5,312
+2026/07/14週,KWシグナル,住友不動産,リスティング(Google/Yahoo),中,2026-05-10,住友不動産 業務職,,,🆕新規（競合）｜掲載順位 —→5｜CPC ¥748｜想定集客コスト ¥748｜検索Vol 70。(出典: Keywordmap),,,,,KWSIG-住友不動産-住友不動産 業務職,想定集客コスト,748,new,—,5,748
 `;
 const DEFAULT_SUBJECT = "三菱地所ハウスネット";
-const state = {week:null, cat:"all", comp:"all", q:"", autoCompare:false};
+const state = {week:null, cat:"all", comp:"all", q:"", autoCompare:false, sig:"all"};
 
 const $ = s => document.querySelector(s);
 function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
@@ -773,9 +858,12 @@ const HKEY = {
   "id":"id","識別子":"id",
   "指標名":"metricLabel","指標":"metricLabel","metriclabel":"metricLabel",
   "指標値":"metric","metric":"metric","数値":"metric",
+  "シグナル":"signal","signal":"signal",
+  "前回順位":"rankPrev","今回順位":"rankNow","cpc":"cpc","CPC":"cpc","クリック単価":"cpc",
 };
 function normCat(v){
   const s=(v||"").trim().toUpperCase();
+  if(v&&v.includes("シグナル")) return "KWSIG";
   if(s.includes("ニュース")||s==="NEWS"||s.includes("PR")) return "NEWS";
   if(["CR","TD","KW","LP"].includes(s)) return s;
   if(v&&v.includes("クリエイティブ")) return "CR";
@@ -815,7 +903,9 @@ function buildFromRows(rows){
       note:get(r,"note")||"", diffType, kwUp, kwDown,
       action:get(r,"action")||"", value:get(r,"value")||"",
       id:get(r,"id")||"", metricLabel:get(r,"metricLabel")||"",
-      metric: get(r,"metric")!=="" ? Number(String(get(r,"metric")).replace(/[^0-9.-]/g,"")) : null
+      metric: get(r,"metric")!=="" ? Number(String(get(r,"metric")).replace(/[^0-9.-]/g,"")) : null,
+      signal:get(r,"signal")||"", rankPrev:get(r,"rankPrev")||"", rankNow:get(r,"rankNow")||"",
+      cpc: get(r,"cpc")!=="" ? Number(String(get(r,"cpc")).replace(/[^0-9.-]/g,"")) : null
     });
   }
   if(!events.length) throw new Error("有効なデータ行がありません。");
@@ -825,8 +915,9 @@ function buildFromRows(rows){
   const allComps = new Set();
   events.forEach(e=>{
     allComps.add(e.comp);
-    if(!byWeek[e.week]){ byWeek[e.week]={events:[]}; order.push(e.week); }
-    byWeek[e.week].events.push(e);
+    if(!byWeek[e.week]){ byWeek[e.week]={events:[],signals:[]}; order.push(e.week); }
+    if(e.cat==="KWSIG") byWeek[e.week].signals.push(e);
+    else byWeek[e.week].events.push(e);
   });
   const compCount = allComps.size;
   const weeks={};
@@ -842,6 +933,7 @@ function buildFromRows(rows){
       },
       summary: genSummary(wk, evs),
       events: evs,
+      signals: byWeek[wk].signals||[],
     };
   });
   return {order, weeks};
@@ -871,7 +963,7 @@ function genSummary(wk, evs){
 }
 
 /* ============ レンダリング ============ */
-function catLabel(c){return {CR:"CR",TD:"TD",KW:"KW",LP:"LP",NEWS:"ニュース"}[c]||c;}
+function catLabel(c){return {CR:"CR",TD:"TD",KW:"KW",LP:"LP",NEWS:"ニュース",KWSIG:"KWシグナル"}[c]||c;}
 function sevLabel(s){return {high:"要対応",mid:"注視",low:"参考"}[s];}
 function labelOf(t){return {add:"新規",chg:"変更",rm:"縮小",info:"注視"}[t]||"—";}
 
@@ -1165,7 +1257,95 @@ function cardHtml(e, badge, ghost, delta){
     </div>
   </div>`;
 }
+/* ===== KWシグナル（運用向け一覧） ===== */
+const SIG_META={
+  new:{label:"🆕 新規",cls:"new"},
+  down:{label:"📉 負け始め",cls:"down"},
+  opp:{label:"🎯 好機",cls:"opp"},
+};
+function sigActionOf(s){
+  const self=/自社/.test(s.comp);
+  if(s.signal==="new") return self ? "自社が新規表示。掲載順位の上位化(入札・品質・LP)で獲得を伸ばす。" : "競合が新規参入。自社の出稿・指名防衛を検討。";
+  if(s.signal==="down") return "自社の掲載順位が下落。入札強化・CPC見直しで防衛。";
+  if(s.signal==="opp") return "競合が枠から抜けた好機。入札で刈り取りにいく。";
+  return "";
+}
+function sigFilterList(){
+  const sigs=(store.weeks[state.week].signals||[]).filter(s=>{
+    if(state.comp!=="all" && s.comp!==state.comp) return false;
+    if(state.sig!=="all" && s.signal!==state.sig) return false;
+    const q=state.q.trim().toLowerCase();
+    if(q && !(`${s.title} ${s.comp} ${s.note}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  sigs.sort((a,b)=>(b.metric||0)-(a.metric||0));
+  return sigs;
+}
+function renderSignals(){
+  updateDiffBar(null);
+  const wkSig=store.weeks[state.week].signals||[];
+  const cnt={new:0,down:0,opp:0}; wkSig.forEach(s=>{ if(cnt[s.signal]!=null)cnt[s.signal]++; });
+  const sigs=sigFilterList();
+  $("#feedCount").textContent = `${sigs.length}件表示 / 全${wkSig.length}件（🆕${cnt.new}・📉${cnt.down}・🎯${cnt.opp}）`;
+  const subchips=[["all","すべて"],["new","🆕 新規"],["down","📉 負け始め"],["opp","🎯 好機"]]
+    .map(([k,l])=>`<span class="chip sigchip ${state.sig===k?"on":""}" data-sig="${k}">${l}${k!=="all"?`（${cnt[k]||0}）`:""}</span>`).join("");
+  const rows = sigs.length ? sigs.map(s=>{
+    const m=SIG_META[s.signal]||{label:s.signal,cls:""};
+    const self=/自社/.test(s.comp);
+    return `<tr>
+      <td><span class="sigtag ${m.cls}">${m.label}</span></td>
+      <td class="sig-kw">${esc(s.title)}</td>
+      <td>${self?'<span class="sig-own self">自社</span>':'<span class="sig-own comp">競合</span>'}</td>
+      <td class="tnum">${esc(s.rankPrev||"—")} → <b>${esc(s.rankNow||"—")}</b></td>
+      <td class="tnum">${s.cpc!=null?("¥"+fmtNum(s.cpc)):"—"}</td>
+      <td class="tnum">${s.metric!=null?("¥"+fmtNum(s.metric)):"—"}</td>
+      <td class="sig-act">${esc(sigActionOf(s))}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="7" class="empty" style="padding:24px">該当するKWシグナルはありません。</td></tr>`;
+  $("#feed").innerHTML = `
+    <div class="sigbar">
+      <div class="grp">${subchips}</div>
+      <div class="sig-actions">
+        <button class="tb-btn" id="sigCopy">📋 文章でコピー</button>
+        <button class="tb-btn" id="sigCsv">⬇ CSV</button>
+      </div>
+    </div>
+    <div class="sigtable-wrap">
+      <table class="sigtable">
+        <thead><tr><th>シグナル</th><th>キーワード</th><th>対象</th><th>掲載順位(前→今)</th><th>CPC</th><th>想定集客コスト</th><th>推奨アクション</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  $("#sigCopy").onclick=async()=>{ const t=buildSignalText(); try{ await navigator.clipboard.writeText(t); msg("KWシグナルを文章でコピーしました。","ok"); }catch(_){ msg("コピーに失敗しました。","err"); } };
+  $("#sigCsv").onclick=()=>downloadSignalCSV();
+}
+function buildSignalText(){
+  const sigs=sigFilterList(), w=store.weeks[state.week];
+  const L=[], P=x=>L.push(x);
+  P(`# KWシグナル（運用アクション）`); P(``);
+  P(`**対象週:** ${w.label}　**対象:** ${($("#subj").value||"").trim()}`); P(``);
+  ["new","down","opp"].forEach(k=>{
+    const arr=sigs.filter(s=>s.signal===k); if(!arr.length) return;
+    P(`## ${SIG_META[k].label}（${arr.length}件）`);
+    arr.forEach(s=>P(`- **${s.title}**（${/自社/.test(s.comp)?"自社":"競合"}）｜順位 ${s.rankPrev}→${s.rankNow}｜CPC ¥${fmtNum(s.cpc||0)}｜想定コスト ¥${fmtNum(s.metric||0)}　→ ${sigActionOf(s)}`));
+    P(``);
+  });
+  P(`— まるっと競合分析くん ／ KWシグナル`);
+  return L.join("\n");
+}
+function downloadSignalCSV(){
+  const sigs=sigFilterList();
+  const head="週,シグナル,対象,キーワード,前回順位,今回順位,CPC,想定集客コスト,推奨アクション";
+  const esc2=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+  const lines=[head, ...sigs.map(s=>[state.week, (SIG_META[s.signal]||{label:s.signal}).label.replace(/^..\s/,""), /自社/.test(s.comp)?"自社":"競合", s.title, s.rankPrev, s.rankNow, s.cpc??"", s.metric??"", sigActionOf(s)].map(esc2).join(","))];
+  const blob=new Blob(["﻿"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download=`kw-signals_${(state.week||"week").replace(/[\\/:*?"<>|]/g,"-")}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
 function renderFeed(){
+  if(state.cat==="KWSIG"){ renderSignals(); return; }
   const all=store.weeks[state.week].events;
   const d=diffOf();
   updateDiffBar(d);
@@ -1262,6 +1442,7 @@ $("#compFilter").addEventListener("click",e=>{
   $("#compChips").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===c));
   renderFeed();});
 $("#q").addEventListener("input",e=>{state.q=e.target.value; renderFeed();});
+$("#feed").addEventListener("click",e=>{ const c=e.target.closest(".sigchip"); if(!c)return; state.sig=c.dataset.sig; renderSignals(); });
 
 $("#csvFile").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f)return;

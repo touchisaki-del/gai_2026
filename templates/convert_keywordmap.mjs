@@ -49,6 +49,7 @@ const n = v => { const x=parseInt(String(v).replace(/[^0-9-]/g,""),10); return i
 
 // 広告主ごとに集計
 const byName = {};
+const signals = [];   // KWシグナル（新規/負け始め/好機）
 for (const file of FILES){
   const rows = parseCSV(readFileSync(file,"utf8"));
   const head = rows[0].map(h=>h.trim());
@@ -77,6 +78,17 @@ for (const file of FILES){
     }
     // KW(掲載順位)変化
     const p=n(r[ci.p]), c=n(r[ci.c]);
+    // --- KWシグナル判定（新規/負け始め/好機）---
+    const isSelf=/自社/.test(name);
+    let sig=null;
+    if(p===0 && c>0) sig="new";                          // 新規参入（自社・競合とも）
+    else if(isSelf && p>0 && (c===0 || c>p)) sig="down";  // 自社の負け始め（順位悪化・圏外）
+    else if(!isSelf && p>0 && c===0) sig="opp";           // 競合が枠から抜けた＝好機
+    if(sig){
+      signals.push({ name, isSelf, sig, kw:(r[ci.kw]||"").trim(),
+        rankPrev:(p===0?"—":String(p)), rankNow:(c===0?"圏外":String(c)),
+        cpc:n(r[ci.cpc]), cost:n(r[ci.cost]), vol:n(r[ci.vol]), date:(r[ci.date]||"").trim() });
+    }
     let dir=null, tag=null;
     if(p===0 && c>0){ dir="up"; tag=`新規表示（→${c}位）`; }
     else if(p>0 && c===0){ dir="down"; tag=`非表示化（${p}位→圏外）`; }
@@ -90,7 +102,7 @@ for (const file of FILES){
 }
 
 // 出力
-const HEAD="週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値,ID,指標名,指標値";
+const HEAD="週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値,ID,指標名,指標値,シグナル,前回順位,今回順位,CPC";
 const lines=[HEAD];
 const CAP=12;
 const fmt = arr => arr.sort((a,b)=>b.vol-a.vol).slice(0,CAP)
@@ -126,6 +138,20 @@ for (const [name,o] of Object.entries(byName)){
       `TD-${title}`, "想定流入数", String(t.infl||0)
     ].map(csvEsc).join(","));
   }
+}
+
+// --- KWシグナル行（新規/負け始め/好機）: 想定集客コスト順に上位 ---
+const SIGLABEL={new:"🆕新規",down:"📉負け始め",opp:"🎯好機"};
+const SIGSEV={new:"中",down:"高",opp:"高"};
+signals.sort((a,b)=>b.cost-a.cost);
+for(const s of signals.slice(0,60)){
+  const memo=`${SIGLABEL[s.sig]}（${s.isSelf?"自社":"競合"}）｜掲載順位 ${s.rankPrev}→${s.rankNow}｜CPC ¥${s.cpc}｜想定集客コスト ¥${s.cost}｜検索Vol ${s.vol}。(出典: Keywordmap)`;
+  lines.push([
+    WEEK, "KWシグナル", s.name, "リスティング(Google/Yahoo)", SIGSEV[s.sig], s.date||"取込日",
+    s.kw, "", "", memo, "", "", "", "",
+    `KWSIG-${s.name}-${s.kw}`, "想定集客コスト", String(s.cost),
+    s.sig, s.rankPrev, s.rankNow, String(s.cpc)
+  ].map(csvEsc).join(","));
 }
 process.stdout.write("﻿"+lines.join("\n")+"\n");
 console.error(`変換完了: ${Object.keys(byName).length} 広告主 / 出力 ${lines.length-1} 行`);
