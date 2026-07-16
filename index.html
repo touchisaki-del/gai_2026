@@ -367,7 +367,8 @@
         <label class="side-btn">📤 CSV読み込み<input type="file" id="csvFile" accept=".csv,.tsv,.txt" hidden></label>
         <button class="side-btn" id="pasteBtn">📋 貼り付けで読み込み</button>
         <label class="side-btn" title="前週のCSVを読み込むと、今週との差分を表示します">📎 前週CSV（差分）<input type="file" id="baseFile" accept=".csv,.tsv,.txt" hidden></label>
-        <button class="side-btn primary" id="reportBtn">📄 レポート出力</button>
+        <button class="side-btn primary" id="reportBtn">📄 レポート出力（社内用）</button>
+        <button class="side-btn primary" id="talkBtn">🗣 顧客共有トーク＆差別化</button>
         <button class="side-btn" id="tplBtn">⬇ テンプレートCSV</button>
         <button class="side-btn" id="resetBtn">↺ 初期表示に戻す</button>
       </div>
@@ -447,6 +448,19 @@
     <div class="modal-actions">
       <button class="tb-btn" id="reportCopy">📋 コピー</button>
       <button class="tb-btn primary" id="reportDl">⬇ .md で保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- talk modal -->
+<div class="modal" id="talkModal" hidden>
+  <div class="modal-box">
+    <div class="modal-h">顧客共有トーク ＆ 差別化ヒント<button id="talkX" aria-label="閉じる">✕</button></div>
+    <p class="modal-hint">定例で「競合は何をしているか」を先回りして共有できる台本と、クリエイティブ制作・LP改善で競合に負けない/差別化するためのヒントです。顧客にそのまま話せるネタも含みます。コピーして共有資料・トークメモにお使いください。</p>
+    <textarea id="talkArea" readonly></textarea>
+    <div class="modal-actions">
+      <button class="tb-btn" id="talkCopy">📋 コピー</button>
+      <button class="tb-btn primary" id="talkDl">⬇ .md で保存</button>
     </div>
   </div>
 </div>
@@ -922,6 +936,99 @@ function buildReport(){
   return L.join("\n");
 }
 
+/* ===== 顧客共有トーク & 差別化ヒント ===== */
+const TALK_THEMES=[
+  {key:"timing", label:"タイミング・売り時の煽り", re:/今.{0,3}売|売り時|タイミング|今が|高水準|今動く|今の価値|狙い目|先を見据/},
+  {key:"assess", label:"無料査定・資産価値の可視化", re:/査定|資産価値|価値|相場|いくら|評価額/},
+  {key:"speed",  label:"スピード・手軽さ", re:/最短|スピード|かんたん|簡単|30秒|60秒|即日|カンタン/},
+  {key:"trust",  label:"実績・信頼・安心", re:/実績|信頼|安心|No\.?1|選ばれ|直営|ネットワーク|グループ/},
+  {key:"cost",   label:"税金・費用の不安解消", re:/税|費用|諸費用|お金|手数料/},
+  {key:"souzoku",label:"相続・住み替えなど個別事情", re:/相続|住み替え|離婚|空き家/},
+];
+function analyzeThemes(events){
+  const t={}; TALK_THEMES.forEach(x=>t[x.key]=0);
+  events.forEach(e=>{
+    const s=`${e.title} ${e.after||""} ${e.note||""} ${(e.kwUp||[]).join(" ")}`;
+    TALK_THEMES.forEach(x=>{ if(x.re.test(s)) t[x.key]++; });
+  });
+  return t;
+}
+function buildTalk(){
+  const w=store.weeks[state.week], subj=($("#subj").value||"御社").trim();
+  const evs=w.events;
+  const isSelf=e=>/自社/.test(e.comp);
+  const compEvents=evs.filter(e=>!isSelf(e));
+  const selfEvents=evs.filter(isSelf);
+  const comps=[...new Set(compEvents.map(e=>e.comp))];
+  const compName=comps.join("・")||"競合";
+  const ct=analyzeThemes(compEvents), st=analyzeThemes(selfEvents);
+  const dom=TALK_THEMES.filter(x=>ct[x.key]>0).sort((a,b)=>ct[b.key]-ct[a.key]);
+  const gaps=TALK_THEMES.filter(x=>ct[x.key]===0);
+  // 媒体
+  const compMedia=new Set(); compEvents.forEach(e=>e.media.forEach(m=>compMedia.add(m)));
+  const selfMedia=new Set(); selfEvents.forEach(e=>e.media.forEach(m=>selfMedia.add(m)));
+  const vidRe=/youtube|動画|tver|abema/i;
+  const compVideo=[...compMedia].some(m=>vidRe.test(m));
+  const selfSearch=[...selfMedia].some(m=>/リスティング|google|yahoo/i.test(m));
+  const compSearch=[...compMedia].some(m=>/リスティング|google|yahoo/i.test(m));
+  // CR全体像(表示回数)
+  const crSum=compEvents.find(e=>e.id==="CR-summary");
+  const mitsubishi=/三菱地所/.test(subj);
+  const strengths= mitsubishi ? "三菱地所グループの実績・直営ネットワーク・安心感" : "御社ならではの実績・信頼・強み";
+
+  const L=[], P=x=>L.push(x), HR=()=>{P("");P("---");P("");};
+  P(`# 顧客共有トーク（定例用）`);
+  P(``);
+  P(`**共有先:** ${subj}　**対象週:** ${w.label}　**競合:** ${compName}`);
+  HR();
+
+  P(`## 1. いま競合が力を入れていること（そのまま話せます）`);
+  P(``);
+  if(dom.length){
+    dom.slice(0,3).forEach(d=>P(`- **${d.label}** を強めています（該当の出稿・訴求 ${ct[d.key]}件）。`));
+  } else P(`- 目立った訴求の偏りは見られません。大きな動きは限定的です。`);
+  if(crSum) P(`- ${crSum.comp}は広告クリエイティブを幅広く展開中（${crSum.metricLabel} ${fmtNum(crSum.metric)}／${crSum.media.join("・")} など）。`);
+  if(compVideo && !compSearch) P(`- 出稿は**ディスプレイ・SNS・動画中心**で、検索広告は手薄です。`);
+  else if(compSearch && !compVideo) P(`- 出稿は**検索広告中心**で、動画は手薄です。`);
+  HR();
+
+  P(`## 2. だから${subj}はこう動きましょう（施策提案）`);
+  P(``);
+  if(dom[0]) P(`- 競合の「${dom[0].label}」に**追随せず**、${strengths}を前面に出して差別化する。`);
+  const trustGap=gaps.find(g=>g.key==="trust");
+  if(trustGap) P(`- 競合が使えていない**「実績・信頼・安心」**を軸に、${subj}の強みで選ばれる訴求をつくる。`);
+  gaps.filter(g=>g.key!=="trust").slice(0,2).forEach(g=>P(`- **「${g.label}」**は競合が手薄な空き枠。ここを取りにいく余地がある。`));
+  if(compVideo && !selfMedia.size) P(`- 競合が動画に力を入れている今、**動画クリエイティブ**で先行する余地がある。`);
+  if(!compSearch) P(`- 競合が検索広告を出していないため、**売却系の検索リスティングは獲得を伸ばしやすい**。`);
+  HR();
+
+  P(`## 3. 顧客にそのまま話せるネタ`);
+  P(``);
+  const news=evs.filter(e=>e.cat==="NEWS");
+  news.forEach(n=>P(`- **${n.comp}の最新の動き:** ${n.after||n.title}（${n.date}）`));
+  if(dom[0]) P(`- **業界トレンド:** 競合各社が「${dom[0].label}」を強めており、売主の関心が高まっているサインです。`);
+  if(crSum) P(`- **豆知識:** ${crSum.comp}は${crSum.media.slice(0,3).join("・")}など複数媒体に広告を出しています（気づかないだけで露出は多い）。`);
+  P(`- **問いかけ:** 「最近こういう広告見かけませんか？」と切り出すと、競合対策の会話につなげやすいです。`);
+  HR();
+
+  P(`## クリエイティブ / LP 差別化ヒント`);
+  P(``);
+  P(`**競合がよく使う訴求（かぶらせない）:** ${dom.slice(0,4).map(d=>d.label).join(" / ")||"—"}`);
+  P(``);
+  P(`**競合が手薄な訴求（空き枠＝狙い目）:** ${gaps.map(g=>g.label).join(" / ")||"—"}`);
+  P(``);
+  P(`**差別化のCR / LP 案:**`);
+  P(`- FV（ファーストビュー）は競合の煽りと対比し、${strengths}を一言で。`);
+  P(`- 「成約実績・お客様の声・${mitsubishi?"グループの信頼":"自社の信頼"}」を証拠要素としてLPに配置し、安心感で差別化。`+(gaps.find(g=>g.key==="trust")?"（競合が使えていない訴求）":""));
+  P(`- CTAは競合と同じ「無料査定」でも、${mitsubishi?"『三菱地所グループの担当者が対応』":"『専任担当が対応』"}など安心感を添える。`);
+  if(compVideo) P(`- 競合が動画で押している訴求（${dom[0]?dom[0].label:"タイミング"}）に対し、${strengths}を主役にした動画で差別化。`);
+  P(``);
+  P(`> ※ 競合の訴求傾向はデータからの自動抽出です。実制作時は各社の最新クリエイティブ（ADクロール）もあわせてご確認ください。`);
+  P(``);
+  P(`— まるっと競合分析くん ／ 顧客共有トーク`);
+  return L.join("\n");
+}
+
 function renderWeekSel(){
   const sel=$("#weekSel");
   sel.innerHTML = store.order.map(k=>`<option value="${esc(k)}">${esc(store.weeks[k].label)}</option>`).join("");
@@ -1160,6 +1267,22 @@ $("#reportDl").addEventListener("click",()=>{
   const blob=new Blob(["﻿"+$("#reportArea").value],{type:"text/markdown;charset=utf-8"});
   const url=URL.createObjectURL(blob), a=document.createElement("a");
   a.href=url; a.download=`competitive-report_${(state.week||"week").replace(/[\\/:*?"<>|]/g,"-")}.md`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+/* talk modal（顧客共有トーク＆差別化） */
+$("#talkBtn").addEventListener("click",()=>{ $("#talkArea").value=buildTalk(); $("#talkModal").hidden=false; });
+$("#talkX").addEventListener("click",()=>{$("#talkModal").hidden=true;});
+$("#talkModal").addEventListener("click",e=>{ if(e.target.id==="talkModal") $("#talkModal").hidden=true; });
+$("#talkCopy").addEventListener("click",async()=>{
+  const t=$("#talkArea").value;
+  try{ await navigator.clipboard.writeText(t); msg("顧客共有トークをコピーしました。","ok"); }
+  catch(_){ const ta=$("#talkArea"); ta.focus(); ta.select(); document.execCommand&&document.execCommand("copy"); msg("選択しました。Ctrl/⌘+Cでコピーしてください。","demo"); }
+});
+$("#talkDl").addEventListener("click",()=>{
+  const blob=new Blob(["﻿"+$("#talkArea").value],{type:"text/markdown;charset=utf-8"});
+  const url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download=`client-talk_${(state.week||"week").replace(/[\\/:*?"<>|]/g,"-")}.md`;
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
