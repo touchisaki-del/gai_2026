@@ -57,22 +57,32 @@ for (const file of FILES){
     kw: col("キーワード"), p: col("広告順位(前回)"), c: col("広告順位(今回)"),
     vol: col("検索Vol"), cpc: col("クリック単価"), cost: col("想定集客コスト"),
     lp: col("ランディングページURL"), disp: col("表示設定URL"),
-    date: col("最新取得日"), title: col("タイトル"),
+    date: col("最新取得日"), title: col("タイトル"), desc: col("ディスクリプション"),
+    infl: col("想定流入数"),
   };
   for (let i=1;i<rows.length;i++){
     const r=rows[i]; if(!r[ci.kw]) continue;
     const name = nameOf(r[ci.disp]||r[ci.lp]);
+    (byName[name] ||= {up:[],down:[],date:"",cost:0,topCost:{kw:"",v:0},titles:{}});
+    const o=byName[name];
+    const dt=(r[ci.date]||"").trim(); if(dt>o.date) o.date=dt;
+    // TD(広告文)集計: タイトルごとに想定流入数を積算
+    const title=(r[ci.title]||"").trim();
+    if(title){
+      const t=(o.titles[title] ||= {infl:0,kws:0,desc:"",lp:""});
+      t.infl+=n(r[ci.infl]); t.kws++;
+      if(!t.desc) t.desc=(r[ci.desc]||"").trim();
+      if(!t.lp) t.lp=(r[ci.lp]||"").trim();
+    }
+    // KW(掲載順位)変化
     const p=n(r[ci.p]), c=n(r[ci.c]);
     let dir=null, tag=null;
     if(p===0 && c>0){ dir="up"; tag=`新規表示（→${c}位）`; }
     else if(p>0 && c===0){ dir="down"; tag=`非表示化（${p}位→圏外）`; }
     else if(p>0 && c>0 && c<p){ dir="up"; tag=`（${p}→${c}位）`; }
     else if(p>0 && c>0 && c>p){ dir="down"; tag=`（${p}→${c}位）`; }
-    else continue; // 変化なし
-    (byName[name] ||= {up:[],down:[],date:"",cost:0,topCost:{kw:"",v:0}});
-    const o=byName[name];
+    else continue; // 順位変化なし
     o[dir].push({ kw:r[ci.kw].trim(), tag, vol:n(r[ci.vol]), cost:n(r[ci.cost]) });
-    const dt=(r[ci.date]||"").trim(); if(dt>o.date) o.date=dt;
     const cost=n(r[ci.cost]); o.cost+=cost;
     if(cost>o.topCost.v) o.topCost={kw:r[ci.kw].trim(), v:cost};
   }
@@ -94,12 +104,25 @@ for (const [name,o] of Object.entries(byName)){
     + (extraUp||extraDown?`／表示は上位${CAP}件`:"")+`）。`
     + `想定集客コスト上位: ${o.topCost.kw}（${man(o.topCost.v)}）。`
     + `(出典: Keywordmap)`;
-  const row=[
-    WEEK, "KW", name, "リスティング(Google/Yahoo)", sev, o.date||"取込日",
-    "リスティング出稿KW・掲載順位の変化", "", "",
-    memo, fmt(o.up), fmt(o.down), "", ""
-  ].map(csvEsc);
-  lines.push(row.join(","));
+  if(total>0){
+    const row=[
+      WEEK, "KW", name, "リスティング(Google/Yahoo)", sev, o.date||"取込日",
+      "リスティング出稿KW・掲載順位の変化", "", "",
+      memo, fmt(o.up), fmt(o.down), "", ""
+    ].map(csvEsc);
+    lines.push(row.join(","));
+  }
+  // TD(広告文)行: 想定流入数の多い広告見出し上位
+  const clip=(s,nn)=> s.length>nn ? s.slice(0,nn)+"…" : s;
+  const titles=Object.entries(o.titles).sort((a,b)=>b[1].infl-a[1].infl).slice(0,5);
+  for(const [title,t] of titles){
+    const now = t.desc ? `${title} ／ ${clip(t.desc,60)}` : title;
+    const tdMemo=`Keywordmap取込。想定流入数${t.infl}・${t.kws}KWで表示。(出典: Keywordmap)`;
+    lines.push([
+      WEEK, "TD", name, "リスティング(Google/Yahoo)", "中", o.date||"取込日",
+      "広告見出し: "+clip(title,26), "", now, tdMemo, "", "", "", ""
+    ].map(csvEsc).join(","));
+  }
 }
 process.stdout.write("﻿"+lines.join("\n")+"\n");
 console.error(`変換完了: ${Object.keys(byName).length} 広告主 / 出力 ${lines.length-1} 行`);
