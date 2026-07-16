@@ -302,6 +302,24 @@
   .lp-url a{color:var(--info);text-decoration:none}
   .lp-url a:hover{text-decoration:underline}
 
+  /* 概要ダッシュボード ウィジェット */
+  .ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:6px}
+  .ov-card{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:15px 17px;cursor:pointer;transition:transform .14s,box-shadow .14s,border-color .14s}
+  .ov-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(38,50,79,.10);border-color:color-mix(in srgb,var(--accent) 38%,var(--line))}
+  .ov-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;margin-bottom:11px}
+  .ov-h .go{margin-left:auto;font-size:11px;color:var(--accent);font-weight:700}
+  .ov-stat{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:9px}
+  .ov-stat .s{display:flex;flex-direction:column}
+  .ov-stat .s b{font-size:23px;font-weight:800;line-height:1}
+  .ov-stat .s i{font-size:10.5px;color:var(--ink-3);font-style:normal;margin-top:3px}
+  .ov-list{font-size:12px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px;line-height:1.5}
+  .ov-bar{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+  .ov-bar .row{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--ink-3)}
+  .ov-bar .row i{width:74px;flex:none;font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ov-bar .row b{height:7px;border-radius:6px;background:var(--accent);min-width:2px;display:inline-block}
+  .ov-bar .row span{font-variant-numeric:tabular-nums}
+
   /* modal */
   .modal{position:fixed;inset:0;background:rgba(10,12,16,.55);display:grid;place-items:center;z-index:50;padding:20px}
   .modal[hidden]{display:none}
@@ -1666,6 +1684,51 @@ function downloadLPCSV(){
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
+/* ===== 概要ダッシュボード（各分析のサマリーウィジェット） ===== */
+function overviewWidgets(){
+  const w=store.weeks[state.week]; const ev=w.events; const sg=w.signals||[];
+  const num=(s,re)=>{const m=String(s||"").match(re);return m?Number(m[1]):null;};
+  // KWシグナル
+  const sc={new:0,down:0,opp:0}; sg.forEach(s=>{ if(sc[s.signal]!=null)sc[s.signal]++; });
+  const sgTop=[...sg].sort((a,b)=>(b.metric||0)-(a.metric||0))[0];
+  // CR
+  const crSum=ev.find(e=>e.id==="CR-summary");
+  const crThemes=ev.filter(e=>e.cat==="CR"&&e.id!=="CR-summary").sort((a,b)=>(b.metric||0)-(a.metric||0));
+  const media={}; ev.filter(e=>e.cat==="CR").forEach(e=>e.media.forEach(m=>media[m]=(media[m]||0)+1));
+  const mediaTop=Object.entries(media).sort((a,b)=>b[1]-a[1]).slice(0,5); const mMax=mediaTop[0]?mediaTop[0][1]:1;
+  // TD / LP
+  const tdItems=(ev.filter(e=>e.cat==="TD")).map(tdParts); tdItems.forEach(x=>x.tags=tagsOf(x.text));
+  const gaps=tdCoverage(tdItems).filter(c=>c.gap);
+  const lpItems=lpData(); const dist=lpTypeDist(lpItems); const lpGap=dist.filter(d=>d.gap);
+  // news
+  const news=ev.filter(e=>e.cat==="NEWS");
+
+  const card=(goto,icon,title,inner)=>`<div class="ov-card" data-goto="${goto}"><div class="ov-h">${icon} ${title}<span class="go">詳細 →</span></div>${inner}</div>`;
+  const list=arr=>`<div class="ov-list">${arr.map(x=>`<div>・${esc(x)}</div>`).join("")||'<div style="color:var(--ink-3)">—</div>'}</div>`;
+
+  const wKW=card("KWSIG","🎯","KWシグナル",
+    `<div class="ov-stat"><div class="s"><b class="tnum" style="color:var(--add)">${sc.new}</b><i>🆕新規</i></div><div class="s"><b class="tnum" style="color:var(--rm)">${sc.down}</b><i>📉負け始め</i></div><div class="s"><b class="tnum" style="color:var(--info)">${sc.opp}</b><i>🎯好機</i></div></div>`+
+    (sgTop?`<div class="ov-list"><div>最大コスト: <b>${esc(sgTop.title)}</b>（¥${fmtNum(sgTop.metric||0)}／${esc(sgTop.rankPrev)}→${esc(sgTop.rankNow)}位）</div></div>`:""));
+
+  const wCR=card("CR","🖼","CR（クリエイティブ）",
+    `<div class="ov-stat"><div class="s"><b class="tnum">${crSum?fmtNum(num(crSum.after,/総CR(\d+)/)||0):crThemes.length}</b><i>総CR</i></div><div class="s"><b class="tnum">${crSum?fmtNum(num(crSum.after,/新規CR(\d+)/)||0):"—"}</b><i>新規CR</i></div><div class="s"><b class="tnum">${crSum?fmtNum(crSum.metric||0):"—"}</b><i>表示回数</i></div></div>`+
+    `<div class="ov-bar">${mediaTop.map(([m,n])=>`<div class="row"><i>${esc(m)}</i><b style="width:${Math.round(n/mMax*100)}%"></b><span>${n}</span></div>`).join("")}</div>`);
+
+  const wTD=card("TD","🔤","TD（広告文）",
+    `<div class="ov-stat"><div class="s"><b class="tnum">${tdItems.length}</b><i>分解件数</i></div><div class="s"><b class="tnum" style="color:var(--rm)">${gaps.length}</b><i>抜け(追加候補)</i></div></div>`+
+    list(gaps.slice(0,3).map(g=>g.el.label)));
+
+  const wLP=card("LP","📄","LP（ランディング）",
+    `<div class="ov-stat"><div class="s"><b class="tnum">${lpItems.length}</b><i>競合LP</i></div><div class="s"><b class="tnum" style="color:var(--rm)">${lpGap.length}</b><i>作成候補タイプ</i></div></div>`+
+    list(dist.filter(d=>d.n>0).slice(0,3).map(d=>`${d.t.label}（${d.compN}本）`)));
+
+  const wNews=card("NEWS","📰","ニュース・事業動向",
+    news.length?`<div class="ov-list">${news.slice(0,3).map(n=>`<div>・<b>${esc(n.after||n.title)}</b> <span style="color:var(--ink-3)">（${esc(n.date)}）</span></div>`).join("")}</div>`:'<div class="ov-list"><div style="color:var(--ink-3)">新規なし</div></div>');
+
+  return `<div class="ov-grid">${wKW}${wCR}${wTD}${wLP}${wNews}</div>
+    <div class="section-h" style="margin-top:4px"><h2>変化点の詳細</h2><span class="hint">下は全変化点のカード一覧（カテゴリで絞り込み）</span><div class="rule"></div></div>`;
+}
+
 function renderFeed(){
   if(state.cat==="KWSIG"){ renderSignals(); return; }
   if(state.cat==="TD"){ renderTD(); return; }
@@ -1687,7 +1750,8 @@ function renderFeed(){
   };
   const cards=list.map(e=>cardHtml(e, badgeOf(e), false, deltaOf(e)));
   const ghosts=goneList.map(e=>cardHtml(e, `<span class="badge-diff gone">⚠ 消滅</span>`, true, null));
-  $("#feed").innerHTML = cards.join("") + ghosts.join("");
+  const ov = (state.cat==="all" && !baseline) ? overviewWidgets() : "";
+  $("#feed").innerHTML = ov + cards.join("") + ghosts.join("");
 }
 function renderUpdated(){
   const media = isDemo
@@ -1766,7 +1830,12 @@ $("#compFilter").addEventListener("click",e=>{
   $("#compChips").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===c));
   renderFeed();});
 $("#q").addEventListener("input",e=>{state.q=e.target.value; renderFeed();});
-$("#feed").addEventListener("click",e=>{ const c=e.target.closest(".sigchip"); if(!c)return; state.sig=c.dataset.sig; renderSignals(); });
+$("#feed").addEventListener("click",e=>{
+  const sc=e.target.closest(".sigchip"); if(sc){ state.sig=sc.dataset.sig; renderSignals(); return; }
+  const ov=e.target.closest("[data-goto]"); if(ov){ const g=ov.dataset.goto; state.cat=g;
+    $("#catFilter").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.cat===g));
+    window.scrollTo({top:0,behavior:"smooth"}); renderFeed(); }
+});
 
 $("#csvFile").addEventListener("change",e=>{
   const f=e.target.files[0]; if(!f)return;
