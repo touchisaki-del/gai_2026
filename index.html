@@ -264,6 +264,32 @@
   .sig-own.self{color:var(--accent);background:var(--accent-soft)}
   .sig-own.comp{color:var(--ink-2);background:var(--panel-2);border:1px solid var(--line-2)}
 
+  /* TDブラッシュアップ */
+  .td-board{display:flex;flex-direction:column;gap:16px}
+  .td-sec{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
+  .td-h{font-size:14px;font-weight:800;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .td-h .hint{font-size:11px;color:var(--ink-3);font-weight:400}
+  .td-h .sig-actions{margin-left:auto}
+  .cov{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px 20px}
+  .cov-row{display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:8px}
+  .cov-row.gap{background:var(--rm-bg)}
+  .cov-lbl{width:150px;flex:none;font-size:12px;font-weight:600}
+  .cov-badge{font-size:9.5px;font-weight:800;color:#fff;background:var(--rm);padding:1px 6px;border-radius:20px}
+  .cov-bars{flex:1;display:flex;flex-direction:column;gap:3px}
+  .cov-b{position:relative;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink-3)}
+  .cov-b i{width:26px;flex:none;font-style:normal}
+  .cov-b b{height:7px;border-radius:6px;min-width:2px;display:inline-block;transition:width .2s}
+  .cov-b b.s{background:var(--accent)} .cov-b b.c{background:#f4a6c0}
+  .cov-b em{font-style:normal;font-variant-numeric:tabular-nums}
+  ul.sugg{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+  ul.sugg li{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--panel-2);border:1px solid var(--line-2);border-radius:10px;flex-wrap:wrap}
+  .sug-t{font-weight:700;font-size:13px}
+  .sug-len{margin-left:auto;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px}
+  .sug-len.ok{color:var(--add);background:var(--add-bg)} .sug-len.ng{color:var(--chg);background:var(--chg-bg)}
+  .td-desc{font-size:11px;color:var(--ink-3);margin-top:3px;font-weight:400}
+  .td-tag{font-size:10.5px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;display:inline-block;margin:1px 0}
+  .kwok{color:var(--add);font-weight:800} .kwng{color:var(--chg);font-weight:800}
+
   /* modal */
   .modal{position:fixed;inset:0;background:rgba(10,12,16,.55);display:grid;place-items:center;z-index:50;padding:20px}
   .modal[hidden]{display:none}
@@ -1344,8 +1370,143 @@ function downloadSignalCSV(){
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
+/* ===== TDブラッシュアップ（広告文の分解・改善） ===== */
+const TD_ELEMENTS=[
+  {key:"assess", label:"無料査定", re:/査定|見積|いくら|価値|評価額/},
+  {key:"result", label:"実績・No.1", re:/実績|No\.?1|選ばれ|多数|万件|年連続|事例/},
+  {key:"speed",  label:"スピード・手軽", re:/最短|即日|スピード|かんたん|簡単|カンタン|\d+\s*(分|日|秒)/},
+  {key:"price",  label:"高く売る・価格", re:/高く|高値|価格|好条件|相場/},
+  {key:"timing", label:"売り時・タイミング", re:/売り時|今が|今なら|タイミング|市場|高水準/},
+  {key:"cost",   label:"税金・費用", re:/税|費用|諸費用|手数料/},
+  {key:"souzoku",label:"相続・住み替え", re:/相続|住み替え|離婚|空き家/},
+  {key:"trust",  label:"安心・信頼・グループ", re:/安心|信頼|大手|グループ|直営|ネットワーク|公式|プロ/},
+  {key:"area",   label:"エリア・地域", re:/東京|大阪|区|市|エリア|地域|沿線|駅/},
+  {key:"num",    label:"数字の使用", re:/[0-9０-９]/},
+  {key:"cta",    label:"CTA(相談・依頼)", re:/相談|依頼|お任せ|まずは|受付|お問い合わせ/},
+];
+const CORE_KW=/売却|査定|不動産|マンション|一戸建|戸建|土地|買取/;
+function zenLen(s){ return Math.round([...String(s||"")].reduce((a,c)=>a+(/[\x00-\x7F｡-ﾟ]/.test(c)?0.5:1),0)); }
+function tdParts(e){
+  const headline = e.id&&e.id.startsWith("TD-") ? e.id.slice(3) : (e.title||"").replace(/^広告見出し:\s*/,"");
+  const after=e.after||"";
+  const desc = after.includes(" ／ ") ? after.split(" ／ ").slice(1).join(" ／ ") : "";
+  return {headline, desc, text:`${headline} ${desc}`, self:/自社/.test(e.comp), infl:e.metric||0, comp:e.comp};
+}
+function tagsOf(text){ return TD_ELEMENTS.filter(el=>el.re.test(text)); }
+function tdData(){
+  const evs=(store.weeks[state.week].events||[]).filter(e=>e.cat==="TD");
+  return evs.map(e=>{ const p=tdParts(e); p.tags=tagsOf(p.text); p.hasKW=CORE_KW.test(p.headline); return p; })
+    .sort((a,b)=>b.infl-a.infl);
+}
+function tdCoverage(items){
+  const self=items.filter(x=>x.self), comp=items.filter(x=>!x.self);
+  return TD_ELEMENTS.map(el=>{
+    const sN=self.filter(x=>x.tags.some(t=>t.key===el.key)).length;
+    const cN=comp.filter(x=>x.tags.some(t=>t.key===el.key)).length;
+    return {el, sN, sT:self.length, cN, cT:comp.length, gap: sN===0 && cN>0};
+  });
+}
+function tdSuggest(items){
+  const usp = /三菱地所/.test(($("#subj").value||"")) ? "三菱地所グループ" : "自社";
+  const cov=tdCoverage(items);
+  const gapKeys=cov.filter(c=>c.gap).map(c=>c.el.key);
+  const cand=[];
+  cand.push(`不動産売却なら${usp}｜実績で選ばれる安心`);
+  cand.push(`マンション売却｜無料査定・${usp}の直営ネットワーク`);
+  if(gapKeys.includes("speed")||true) cand.push(`60秒でかんたん無料査定｜${usp}が高値売却をサポート`);
+  if(gapKeys.includes("area")) cand.push(`【エリア】マンション売却｜${usp}の地域密着仲介`);
+  if(gapKeys.includes("cost")) cand.push(`売却の税金・費用も安心｜${usp}が最適プランをご提案`);
+  if(gapKeys.includes("souzoku")) cand.push(`相続・住み替えの不動産売却｜${usp}にまずは無料相談`);
+  cand.push(`査定は無料｜${usp}の担当者が対応する安心の売却`);
+  const seen=new Set();
+  return cand.filter(c=>!seen.has(c)&&seen.add(c)).slice(0,6).map(c=>{
+    const segs=c.split(/[｜|]/).map(s=>zenLen(s));   // 見出しは｜区切りの各パートで判定
+    const maxLen=Math.max(...segs);
+    return {t:c, len:maxLen, ok:maxLen<=15};
+  });
+}
+function renderTD(){
+  updateDiffBar(null);
+  let items=tdData();
+  const q=state.q.trim().toLowerCase();
+  if(state.comp!=="all") items=items.filter(x=>x.comp===state.comp);
+  if(q) items=items.filter(x=>x.text.toLowerCase().includes(q));
+  $("#feedCount").textContent = `広告文 ${items.length}件を分解`;
+  if(!items.length){ $("#feed").innerHTML=`<div class="empty">TD（広告文）データがありません。KeywordmapのCSVを読み込むと分解できます。</div>`; return; }
+  const cov=tdCoverage(items);
+  const covHtml=cov.map(c=>`
+    <div class="cov-row ${c.gap?'gap':''}">
+      <div class="cov-lbl">${c.el.label}${c.gap?' <span class="cov-badge">抜け</span>':''}</div>
+      <div class="cov-bars">
+        <span class="cov-b"><i>自社</i><b class="s" style="width:${c.sT?Math.round(c.sN/c.sT*100):0}%"></b><em>${c.sN}/${c.sT}</em></span>
+        <span class="cov-b"><i>競合</i><b class="c" style="width:${c.cT?Math.round(c.cN/c.cT*100):0}%"></b><em>${c.cN}/${c.cT}</em></span>
+      </div>
+    </div>`).join("");
+  const sugg=tdSuggest(items);
+  const suggHtml=sugg.map(s=>`<li><span class="sug-t">${esc(s.t)}</span><span class="sug-len ${s.ok?'ok':'ng'}">見出し最長 全角${s.len}字 ${s.ok?'OK':'要短縮'}</span></li>`).join("");
+  const rows=items.map(x=>`
+    <tr>
+      <td>${x.self?'<span class="sig-own self">自社</span>':'<span class="sig-own comp">競合</span>'}</td>
+      <td class="sig-kw">${esc(x.headline)}<div class="td-desc">${esc(x.desc||"—")}</div></td>
+      <td class="tnum">${x.infl?fmtNum(x.infl):"—"}</td>
+      <td>${x.tags.map(t=>`<span class="td-tag">${t.label}</span>`).join(" ")||'<span style="color:var(--ink-3)">—</span>'}</td>
+      <td class="tnum">${zenLen(x.headline)}字</td>
+      <td>${x.hasKW?'<span class="kwok">○</span>':'<span class="kwng">△</span>'}</td>
+    </tr>`).join("");
+  $("#feed").innerHTML = `
+    <div class="td-board">
+      <div class="td-sec">
+        <div class="td-h">🧩 要素カバレッジ（自社 vs 競合）<span class="hint">「抜け」＝競合は使っているが自社が未使用＝追加候補</span></div>
+        <div class="cov">${covHtml}</div>
+      </div>
+      <div class="td-sec">
+        <div class="td-h">✍ 改善案（差し替え候補見出し）<span class="hint">自社の強み×勝ち要素×文字数チェック（Google見出し 全角15字目安）</span>
+          <span class="sig-actions"><button class="tb-btn" id="tdCopy">📋 文章でコピー</button><button class="tb-btn" id="tdCsv">⬇ CSV</button></span>
+        </div>
+        <ul class="sugg">${suggHtml}</ul>
+      </div>
+      <div class="td-sec">
+        <div class="td-h">📋 広告文の分解一覧<span class="hint">想定流入順・要素タグ・見出し字数・KW語の内包</span></div>
+        <div class="sigtable-wrap">
+          <table class="sigtable">
+            <thead><tr><th>対象</th><th>見出し / 説明文</th><th>想定流入</th><th>要素タグ</th><th>見出し字数</th><th>KW語</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  $("#tdCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(buildTDText()); msg("TD分析を文章でコピーしました。","ok"); }catch(_){ msg("コピーに失敗しました。","err"); } };
+  $("#tdCsv").onclick=downloadTDCSV;
+}
+function buildTDText(){
+  let items=tdData(); if(state.comp!=="all") items=items.filter(x=>x.comp===state.comp);
+  const cov=tdCoverage(items), gaps=cov.filter(c=>c.gap), sugg=tdSuggest(items), w=store.weeks[state.week];
+  const L=[],P=x=>L.push(x);
+  P(`# TDブラッシュアップ（広告文の分解と改善）`); P(``);
+  P(`**対象週:** ${w.label}　**対象:** ${($("#subj").value||"").trim()}`); P(``);
+  P(`## 競合が使い、自社が未使用の要素（抜け＝追加候補）`);
+  P(gaps.length? gaps.map(g=>`- ${g.el.label}`).join("\n") : "- なし（主要要素は概ねカバー）"); P(``);
+  P(`## 改善案（差し替え候補見出し）`);
+  sugg.forEach(s=>P(`- ${s.t}（見出し最長 全角${s.len}字 ${s.ok?"OK":"要短縮"}）`)); P(``);
+  P(`## 想定流入 上位の見出し（勝ちフレーズの参考）`);
+  items.slice(0,8).forEach(x=>P(`- [${x.self?"自社":"競合"}] ${x.headline}｜流入${fmtNum(x.infl)}｜要素: ${x.tags.map(t=>t.label).join("・")||"—"}`));
+  P(``); P(`— まるっと競合分析くん ／ TDブラッシュアップ`);
+  return L.join("\n");
+}
+function downloadTDCSV(){
+  let items=tdData(); if(state.comp!=="all") items=items.filter(x=>x.comp===state.comp);
+  const head="週,対象,見出し,説明文,想定流入,要素タグ,見出し字数,KW語内包";
+  const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
+  const lines=[head,...items.map(x=>[state.week,x.self?"自社":"競合",x.headline,x.desc,x.infl,x.tags.map(t=>t.label).join("・"),zenLen(x.headline),x.hasKW?"○":"△"].map(q).join(","))];
+  const blob=new Blob(["﻿"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url; a.download=`td-brushup_${(state.week||"week").replace(/[\\/:*?"<>|]/g,"-")}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
 function renderFeed(){
   if(state.cat==="KWSIG"){ renderSignals(); return; }
+  if(state.cat==="TD"){ renderTD(); return; }
   const all=store.weeks[state.week].events;
   const d=diffOf();
   updateDiffBar(d);
