@@ -37,13 +37,13 @@ jobs:
           # Web検索を許可（アクションのバージョンによりオプション名は要確認）
           allowed_tools: "WebSearch,WebFetch,Read,Edit,Write"
           prompt: |
-            三菱地所ハウスネット向けの競合ウォッチ週次収集。
-            競合4社(三井のリハウス / 東急リバブル / 住友不動産ステップ / 野村の仲介プラス)と
-            不動産仲介業界について、直近1週間の新しいニュース・プレスリリース・新サービス・
-            料金改定・キャンペーン・ブランド施策をWeb検索で収集する。
-            templates/mec-h_auto_collected.csv のスキーマ
+            三菱地所ハウスネット向けの競合ウォッチ週次収集。競合は「住友不動産」のみ
+            (不動産仲介ブランド=住友不動産ステップ／住友不動産販売を含む)。
+            直近1週間の新しいニュース・プレスリリース・新サービス・料金改定・キャンペーン・
+            店舗開設・ブランド施策をWeb検索で収集する。不動産売買仲介の動きを優先し、採用・IRは除外。
+            templates/mec-h_sumitomo.csv のスキーマ
             (週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値)
-            に沿って新しい行を追記。BOM付きUTF-8を維持。カテゴリは基本「ニュース」、
+            に沿って新しい行を追記。競合列は常に「住友不動産」。BOM付きUTF-8を維持。カテゴリは基本「ニュース」、
             重要度は高/中/低、AIメモに必ず(出典: 媒体名)を付ける。事実のみ・推測は(推測)と明示。
             値にASCIIカンマは使わない(全角・スラッシュで代替)。週の値は実行日(今週)ベース。
             新規性がなければファイルは変更しない。
@@ -52,9 +52,9 @@ jobs:
         run: |
           git config user.name "competitive-bot"
           git config user.email "competitive-bot@users.noreply.github.com"
-          if ! git diff --quiet -- templates/mec-h_auto_collected.csv; then
-            git add templates/mec-h_auto_collected.csv
-            git commit -m "週次自動収集: $(date +%Y-%m-%d) 競合ニュース更新"
+          if ! git diff --quiet -- templates/mec-h_sumitomo.csv; then
+            git add templates/mec-h_sumitomo.csv
+            git commit -m "週次自動収集(住友不動産): $(date +%Y-%m-%d)"
             git push
           else
             echo "変更なし（今週の新規なし）"
