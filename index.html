@@ -200,6 +200,19 @@
   @media (max-width:560px){.act .r{grid-template-columns:1fr;gap:4px}}
   .empty{text-align:center;color:var(--ink-3);padding:40px;font-size:13px}
 
+  /* diff */
+  .diffbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:10px 2px 0;padding:10px 15px;
+    border-radius:12px;background:var(--panel);border:1px solid var(--line);font-size:12.5px;box-shadow:var(--shadow)}
+  .diffbar[hidden]{display:none}
+  .diffbar .d-new{color:var(--add);font-weight:700} .diffbar .d-keep{color:var(--ink-2)} .diffbar .d-gone{color:var(--rm);font-weight:700}
+  .diffbar .clear{margin-left:auto;color:var(--info);cursor:pointer;text-decoration:underline;font-size:11.5px;background:none;border:none;font-family:inherit}
+  .badge-diff{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.02em}
+  .badge-diff.new{color:var(--add);background:var(--add-bg)}
+  .badge-diff.keep{color:var(--ink-3);background:var(--panel-2);border:1px solid var(--line-2)}
+  .badge-diff.gone{color:var(--rm);background:var(--rm-bg)}
+  .card.ghost{opacity:.66}
+  .card.ghost .title-chg{text-decoration:line-through;text-decoration-color:var(--rm)}
+
   /* modal */
   .modal{position:fixed;inset:0;background:rgba(10,12,16,.55);display:grid;place-items:center;z-index:50;padding:20px}
   .modal[hidden]{display:none}
@@ -245,12 +258,14 @@
     <button class="tb-btn" id="pasteBtn">📋 貼り付けで読み込み</button>
     <button class="tb-btn" id="tplBtn">⬇ テンプレートCSV</button>
     <button class="tb-btn primary" id="reportBtn">📄 レポート出力</button>
+    <label class="tb-btn" title="前週のCSVを読み込むと、今週との差分(新規/継続/消滅)を表示します">📎 前週CSV(差分)<input type="file" id="baseFile" accept=".csv,.tsv,.txt" hidden></label>
     <button class="tb-btn" id="resetBtn">↺ デモに戻す</button>
     <div class="tb-right">
       <input class="subj-input" id="subj" placeholder="対象業種・案件名(任意)" />
     </div>
   </div>
   <div class="load-msg" id="loadMsg" hidden></div>
+  <div class="diffbar" id="diffbar" hidden></div>
 
   <!-- KPI -->
   <div class="kpis" id="kpis"></div>
@@ -495,6 +510,31 @@ const state = {week:null, cat:"all", comp:"all", q:""};
 const $ = s => document.querySelector(s);
 function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 
+/* ============ 差分(前週比較) ============ */
+let baseline=null; // {keys:Set, events:[], label}
+function norm(s){return String(s||"").toLowerCase().replace(/\s+/g,"").replace(/[　、。｜|・！？!?]/g,"");}
+function keyOf(e){ return e.comp+"|"+e.cat+"|"+(e.cat==="KW"?"KW":norm(e.after||e.title)); }
+function curEvents(){ return store.weeks[state.week]?store.weeks[state.week].events:[]; }
+function diffOf(){
+  if(!baseline) return null;
+  const cur=curEvents();
+  const curKeys=new Set(cur.map(keyOf));
+  const isNew=e=>!baseline.keys.has(keyOf(e));
+  const gone=baseline.events.filter(be=>!curKeys.has(keyOf(be)));
+  return {isNew, gone, newN:cur.filter(isNew).length, keepN:cur.filter(e=>!isNew(e)).length};
+}
+function updateDiffBar(d){
+  const bar=$("#diffbar");
+  if(!d){ bar.hidden=true; bar.innerHTML=""; return; }
+  bar.hidden=false;
+  bar.innerHTML=`<span>📎 <b>前週比較中</b>（${esc(baseline.label||"前週")}）</span>`
+    +`<span class="d-new">🆕 新規 ${d.newN}</span>`
+    +`<span class="d-keep">↔ 継続 ${d.keepN}</span>`
+    +`<span class="d-gone">⚠ 消滅 ${d.gone.length}</span>`
+    +`<button class="clear" id="diffClear">比較を解除</button>`;
+  $("#diffClear").onclick=()=>{ baseline=null; renderFeed(); };
+}
+
 /* ============ CSV / TSV パース ============ */
 function detectDelim(text){
   const head = text.split(/\r?\n/)[0]||"";
@@ -666,49 +706,71 @@ function stripHtml(s){return String(s).replace(/<[^>]+>/g,"");}
 function buildReport(){
   const wk=state.week, w=store.weeks[wk], subj=($("#subj").value||"").trim();
   const s=w.summary, k=w.kpis;
-  const L=[];
-  L.push(`# 競合ウォッチ 週次レポート`);
-  L.push(``);
-  L.push(`- 対象週: ${w.label}`);
-  if(subj) L.push(`- 対象業種・案件: ${subj}`);
-  L.push(`- サマリー: 監視競合 ${k.competitors} / 変化点 ${k.changes} / 新規CR ${k.newCR} / 要対応 ${k.alerts}`);
-  L.push(``);
-  L.push(`## 今週の要約`);
-  L.push(stripHtml(s.lead));
-  s.items.forEach(i=>L.push(`- [${i.label||labelOf(i.type)}] ${stripHtml(i.t)}`));
-  L.push(``);
-  L.push(`### 営業アクション提案`);
-  L.push(stripHtml(s.action));
-  L.push(``);
-  L.push(`## 検知した変化点と対応（検知 → 社内が動く → 社外に価値が返る）`);
+  const d=diffOf();
   const order={high:0,mid:1,low:2};
-  [...w.events].sort((a,b)=>order[a.sev]-order[b.sev]).forEach((e,i)=>{
-    const a=actionParts(e);
-    L.push(``);
-    L.push(`### ${i+1}. [${catLabel(e.cat)}｜${playbook(e.cat).theme}] ${e.comp} — ${e.title}`);
-    L.push(`- 重要度: ${sevLabel(e.sev)}／媒体: ${e.media.join(", ")}／検知日: ${e.date}`);
-    if(e.diffType==="kw"){
-      if(e.kwUp&&e.kwUp.length) L.push(`- ▲ 入札強化/上昇: ${e.kwUp.join(" / ")}`);
-      if(e.kwDown&&e.kwDown.length) L.push(`- ▼ 縮小/下落/除外: ${e.kwDown.join(" / ")}`);
-    } else if(e.diffType==="news"){
-      L.push(`- 内容: ${e.after}`);
-    } else {
-      L.push(`- 変化: 先週「${e.before}」→ 今週「${e.after}」`);
-    }
-    if(e.note) L.push(`- 観測: ${e.note}`);
-    L.push(`- 🎯 社内ネクストアクション: ${a.internal}`);
-    L.push(`- 🎁 社外への価値: 事業者 → ${a.biz}／生活者 → ${a.consumer}`);
+  const CATS=["KW","TD","LP","CR","NEWS"];
+  const L=[], P=x=>L.push(x), HR=()=>{P("");P("---");P("");};
+
+  P(`# 競合ウォッチ 週次レポート`);
+  P(``);
+  P(`**対象週:** ${w.label}  `);
+  if(subj) P(`**対象:** ${subj}  `);
+  const comps=[...new Set(w.events.map(e=>e.comp))];
+  P(`**競合:** ${comps.join(" / ")||"—"}  `);
+  P(`**規模:** 監視 ${k.competitors} ・ 変化点 ${k.changes} ・ 新規CR ${k.newCR} ・ 要対応 ${k.alerts}`);
+  if(d) P(`**前週比:** 🆕 新規 ${d.newN} ・ ↔ 継続 ${d.keepN} ・ ⚠ 消滅 ${d.gone.length}`);
+  HR();
+
+  P(`## エグゼクティブサマリー`);
+  P(``);
+  P(stripHtml(s.lead));
+  P(``);
+  s.items.forEach(i=>P(`- **[${i.label||labelOf(i.type)}]** ${stripHtml(i.t)}`));
+  P(``);
+  P(`> 💡 **営業アクション:** ${stripHtml(s.action)}`);
+  HR();
+
+  P(`## カテゴリ別の変化点（検知 → 社内が動く → 社外に価値が返る）`);
+  CATS.forEach(cat=>{
+    const items=w.events.filter(e=>e.cat===cat).sort((a,b)=>order[a.sev]-order[b.sev]);
+    if(!items.length) return;
+    P(``);
+    P(`### ${catLabel(cat)}｜${playbook(cat).theme}（${items.length}件）`);
+    items.forEach(e=>{
+      const a=actionParts(e);
+      const flag=(d&&d.isNew(e))?" `🆕新規`":"";
+      P(``);
+      P(`**${e.comp} — ${e.title}**${flag}  `);
+      P(`_${sevLabel(e.sev)}／${e.media.join(", ")}／${e.date}_`);
+      if(e.diffType==="kw"){
+        if(e.kwUp&&e.kwUp.length) P(`- ▲ 上昇/新規: ${e.kwUp.join(" / ")}`);
+        if(e.kwDown&&e.kwDown.length) P(`- ▼ 下落/除外: ${e.kwDown.join(" / ")}`);
+      } else if(e.diffType==="news"||!e.before||e.before==="—"||e.before===""){
+        P(`- 内容: ${e.after}`);
+      } else {
+        P(`- 変化: 「${e.before}」→「${e.after}」`);
+      }
+      if(e.note) P(`- 🤖 観測: ${e.note}`);
+      P(`- 🎯 社内: ${a.internal}`);
+      P(`- 🎁 価値: 事業者→${a.biz}／生活者→${a.consumer}`);
+    });
   });
-  L.push(``);
-  L.push(`## 運用の型（カテゴリ別）`);
-  ["KW","TD","LP","CR","NEWS"].forEach(c=>{
-    const p=PLAYBOOK[c];
-    L.push(`- ${catLabel(c)}｜${p.theme}: ${p.internal}（価値: 事業者→${p.biz} 生活者→${p.consumer}）`);
-  });
-  L.push(``);
-  L.push(`※ 社外の価値は2層 — 事業者(成果・意思決定の材料で継続率↑) → 生活者(的確な訴求・体験で満足度↑)。KW・TD・LP・CRは運用改善、ニュースは戦略・経営提案。`);
-  L.push(``);
-  L.push(`— まるっと競合分析くん（${isDemo?"デモデータ":"読み込みデータ"}）`);
+
+  if(d && d.gone.length){
+    HR();
+    P(`## ⚠ 前週から消えた項目（${d.gone.length}件・出稿停止の可能性＝獲得の好機）`);
+    P(``);
+    d.gone.forEach(e=>P(`- [${catLabel(e.cat)}] ${e.comp} — ${e.title}`));
+  }
+
+  HR();
+  P(`## 運用の型（カテゴリ別）`);
+  P(``);
+  CATS.forEach(c=>{ const p=PLAYBOOK[c]; P(`- **${catLabel(c)}｜${p.theme}:** ${p.internal}`); });
+  P(``);
+  P(`> ※ 社外価値は2層 — 事業者（継続率↑）→ 生活者（満足度↑）。KW・TD・LP・CRは運用改善、ニュースは戦略・経営提案。`);
+  P(``);
+  P(`— まるっと競合分析くん（${isDemo?"デモ":"読み込み"}データ）`);
   return L.join("\n");
 }
 
@@ -756,51 +818,62 @@ function renderAI(){
       <div class="action">💡 <b>営業アクション提案:</b> ${s.action}</div>
     </div>`;
 }
+function passFilter(e){
+  if(state.cat!=="all" && e.cat!==state.cat) return false;
+  if(state.comp!=="all" && e.comp!==state.comp) return false;
+  const q=state.q.trim().toLowerCase();
+  if(q){
+    const hay=(e.title+e.comp+(e.before||"")+(e.after||"")+(e.note||"")+
+      (e.kwUp||[]).join(" ")+(e.kwDown||[]).join(" ")).toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
+  return true;
+}
+function cardHtml(e, badge, ghost){
+  let body="";
+  if(e.diffType==="kw"){
+    body=`<div class="diff">
+      <div class="col"><div class="h">▲ 入札強化 / 上昇</div>${
+        (e.kwUp&&e.kwUp.length)? e.kwUp.map(x=>`<div>・<span class="num-up">${esc(x)}</span></div>`).join(""):'<div style="color:var(--ink-3)">なし</div>'}</div>
+      <div class="col"><div class="h">▼ 縮小 / 下落 / 除外</div>${
+        (e.kwDown&&e.kwDown.length)? e.kwDown.map(x=>`<div>・<span class="num-down">${esc(x)}</span></div>`).join(""):'<div style="color:var(--ink-3)">なし</div>'}</div>
+    </div>`;
+  } else {
+    body=`<div class="diff">
+      <div class="col before"><div class="h">先週</div><span class="${e.diffType==='news'?'':'txt-rm'}">${esc(e.before)}</span></div>
+      <div class="col"><div class="h">今週</div><span class="${e.diffType==='news'?'':'txt-add'}">${esc(e.after)}</span></div>
+    </div>`;
+  }
+  return `<div class="card${ghost?' ghost':''}">
+    <div class="card-head">
+      <span class="cat ${e.cat}">${catLabel(e.cat)}</span>
+      <span class="comp">${esc(e.comp)}</span>
+      ${badge||""}
+      <span class="meta-line">${e.media.map(m=>`<span class="media-tag">${esc(m)}</span>`).join("")}<span>・ ${esc(e.date)}</span></span>
+      <span class="sev ${e.sev}"><span class="dot" style="background:currentColor"></span>${sevLabel(e.sev)}</span>
+    </div>
+    <div class="card-body">
+      <div class="title-chg">${esc(e.title)}</div>
+      ${body}
+      ${ghost?`<div class="ai-note"><span class="ic">⚠</span><span><b>前週比:</b> 今週は検知されず（出稿停止の可能性＝獲得の好機）</span></div>`
+             :`${e.note?`<div class="ai-note"><span class="ic">🤖</span><span><b>観測:</b> ${esc(e.note)}</span></div>`:""}${actionBlock(e)}`}
+    </div>
+  </div>`;
+}
 function renderFeed(){
   const all=store.weeks[state.week].events;
-  const q=state.q.trim().toLowerCase();
-  const list=all.filter(e=>{
-    if(state.cat!=="all" && e.cat!==state.cat) return false;
-    if(state.comp!=="all" && e.comp!==state.comp) return false;
-    if(q){
-      const hay=(e.title+e.comp+(e.before||"")+(e.after||"")+(e.note||"")+
-        (e.kwUp||[]).join(" ")+(e.kwDown||[]).join(" ")).toLowerCase();
-      if(!hay.includes(q)) return false;
-    }
-    return true;
-  });
-  $("#feedCount").textContent = `${list.length} 件を表示中 / 全 ${all.length} 件`;
-  if(!list.length){ $("#feed").innerHTML=`<div class="empty">条件に一致する変化点はありません。</div>`; return; }
-  $("#feed").innerHTML = list.map(e=>{
-    let body="";
-    if(e.diffType==="kw"){
-      body=`<div class="diff">
-        <div class="col"><div class="h">▲ 入札強化 / 上昇</div>${
-          (e.kwUp&&e.kwUp.length)? e.kwUp.map(x=>`<div>・<span class="num-up">${esc(x)}</span></div>`).join(""):'<div style="color:var(--ink-3)">なし</div>'}</div>
-        <div class="col"><div class="h">▼ 縮小 / 下落 / 除外</div>${
-          (e.kwDown&&e.kwDown.length)? e.kwDown.map(x=>`<div>・<span class="num-down">${esc(x)}</span></div>`).join(""):'<div style="color:var(--ink-3)">なし</div>'}</div>
-      </div>`;
-    } else {
-      body=`<div class="diff">
-        <div class="col before"><div class="h">先週</div><span class="${e.diffType==='news'?'':'txt-rm'}">${esc(e.before)}</span></div>
-        <div class="col"><div class="h">今週</div><span class="${e.diffType==='news'?'':'txt-add'}">${esc(e.after)}</span></div>
-      </div>`;
-    }
-    return `<div class="card">
-      <div class="card-head">
-        <span class="cat ${e.cat}">${catLabel(e.cat)}</span>
-        <span class="comp">${esc(e.comp)}</span>
-        <span class="meta-line">${e.media.map(m=>`<span class="media-tag">${esc(m)}</span>`).join("")}<span>・ ${esc(e.date)}</span></span>
-        <span class="sev ${e.sev}"><span class="dot" style="background:currentColor"></span>${sevLabel(e.sev)}</span>
-      </div>
-      <div class="card-body">
-        <div class="title-chg">${esc(e.title)}</div>
-        ${body}
-        ${e.note?`<div class="ai-note"><span class="ic">🤖</span><span><b>観測:</b> ${esc(e.note)}</span></div>`:""}
-        ${actionBlock(e)}
-      </div>
-    </div>`;
-  }).join("");
+  const d=diffOf();
+  updateDiffBar(d);
+  const list=all.filter(passFilter);
+  const goneList=d? d.gone.filter(passFilter):[];
+  $("#feedCount").textContent = d
+    ? `${list.length}件表示（🆕${list.filter(d.isNew).length}／継続${list.filter(e=>!d.isNew(e)).length}）＋消滅${goneList.length} / 全${all.length}件`
+    : `${list.length} 件を表示中 / 全 ${all.length} 件`;
+  if(!list.length && !goneList.length){ $("#feed").innerHTML=`<div class="empty">条件に一致する変化点はありません。</div>`; return; }
+  const badgeOf=e=> d ? (d.isNew(e)?`<span class="badge-diff new">🆕 新規</span>`:`<span class="badge-diff keep">↔ 継続</span>`) : "";
+  const cards=list.map(e=>cardHtml(e, badgeOf(e), false));
+  const ghosts=goneList.map(e=>cardHtml(e, `<span class="badge-diff gone">⚠ 消滅</span>`, true));
+  $("#feed").innerHTML = cards.join("") + ghosts.join("");
 }
 function renderUpdated(){
   const media = isDemo
@@ -871,9 +944,26 @@ $("#csvFile").addEventListener("change",e=>{
 });
 $("#tplBtn").addEventListener("click",downloadTemplate);
 $("#resetBtn").addEventListener("click",()=>{
-  store=DEMO; isDemo=true; state.week=store.order[0]; state.cat="all"; state.comp="all"; state.q=""; $("#q").value="";
+  store=DEMO; isDemo=true; baseline=null; state.week=store.order[0]; state.cat="all"; state.comp="all"; state.q=""; $("#q").value="";
   $("#catFilter").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.cat==="all"));
   renderAll(); msg("デモデータに戻しました。","demo");
+});
+
+/* 前週CSV(差分比較) */
+function loadBaseline(text){
+  const built=buildFromRows(parseDelimited(text, detectDelim(text)));
+  const events=built.order.flatMap(k=>built.weeks[k].events);
+  if(!events.length) throw new Error("前週データに有効な行がありません。");
+  baseline={ keys:new Set(events.map(keyOf)), events, label:built.weeks[built.order[0]].label };
+  renderFeed();
+  msg(`前週データを読み込みました（${events.length}件）。今週との差分を表示中です。`, "ok");
+}
+$("#baseFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ loadBaseline(rd.result); }catch(err){ msg("前週データ読み込みエラー: "+err.message,"err"); } };
+  rd.onerror=()=>msg("ファイルを読めませんでした。","err");
+  rd.readAsText(f,"utf-8"); e.target.value="";
 });
 
 /* paste modal */
