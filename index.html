@@ -212,6 +212,14 @@
   .badge-diff.gone{color:var(--rm);background:var(--rm-bg)}
   .card.ghost{opacity:.66}
   .card.ghost .title-chg{text-decoration:line-through;text-decoration-color:var(--rm)}
+  .metric{margin-top:9px;display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink-2);flex-wrap:wrap}
+  .metric .mlbl{color:var(--ink-3)}
+  .metric b{color:var(--ink);font-variant-numeric:tabular-nums;font-size:14px}
+  .metric .mnote{font-size:10.5px;color:var(--ink-3)}
+  .delta{font-weight:800;font-size:12px;padding:2px 9px;border-radius:20px;font-variant-numeric:tabular-nums}
+  .delta.up{color:var(--up);background:var(--add-bg)}
+  .delta.down{color:var(--down);background:var(--rm-bg)}
+  .delta.flat{color:var(--ink-3);background:var(--panel-2)}
 
   /* modal */
   .modal{position:fixed;inset:0;background:rgba(10,12,16,.55);display:grid;place-items:center;z-index:50;padding:20px}
@@ -241,7 +249,7 @@
     <div class="logo">🔭</div>
     <div class="titles">
       <h1>まるっと競合分析くん <span class="subj-pill" id="subjPill" hidden></span></h1>
-      <p>競合ウォッチダッシュボード — CR・TD・KW・LP・ニュースを横断集約し、先週との差分をAIが自動要約</p>
+      <p>三菱地所ハウスネット様 競合ウォッチ — 不動産仲介の CR・TD・KW・LP・ニュースを横断集約し、前週との差分をAIが自動要約</p>
     </div>
     <div class="top-right">
       <span class="badge-bu">BU</span>
@@ -259,9 +267,9 @@
     <button class="tb-btn" id="tplBtn">⬇ テンプレートCSV</button>
     <button class="tb-btn primary" id="reportBtn">📄 レポート出力</button>
     <label class="tb-btn" title="前週のCSVを読み込むと、今週との差分(新規/継続/消滅)を表示します">📎 前週CSV(差分)<input type="file" id="baseFile" accept=".csv,.tsv,.txt" hidden></label>
-    <button class="tb-btn" id="resetBtn">↺ デモに戻す</button>
+    <button class="tb-btn" id="resetBtn">↺ 初期表示に戻す</button>
     <div class="tb-right">
-      <input class="subj-input" id="subj" placeholder="対象業種・案件名(任意)" />
+      <input class="subj-input" id="subj" placeholder="対象・案件名" value="三菱地所ハウスネット" />
     </div>
   </div>
   <div class="load-msg" id="loadMsg" hidden></div>
@@ -309,8 +317,8 @@
       <span>審査軸① 新規性</span><span>審査軸② 事業インパクト</span>
       <span>審査軸③ 実現可能性</span><span>審査軸④ 浸透度</span>
     </div>
-    まるっと競合分析くん MVP ・ 東地チーム ・ CSV/スプレッドシート読み込みに対応(実データ自動連携は次フェーズ)<br/>
-    局内の誰もが同じ着眼点で競合を把握し、提案スピードと精度を向上させることを目的としたプロトタイプです。
+    三菱地所ハウスネット様 競合ウォッチ ・ まるっと競合分析くん ・ 東地チーム ・ Keywordmap／ADクロール／Web収集のデータを横断集約<br/>
+    担当者の誰もが同じ着眼点で競合（住友不動産ほか）を把握し、提案スピードと精度を向上させることを目的としたプロトタイプです。
   </footer>
 
 </div>
@@ -480,31 +488,61 @@ const DEMO = {
 /* ============ 運用の型（検知 → 社内が動く → 社外に価値が返る） ============ */
 const PLAYBOOK = {
   KW:{ theme:"入札",
-    internal:"撤退KWは機会として入札強化／過熱KWはROIで予算再配分(追わない)／指名KWは防衛。",
-    biz:"CPA・ROAS改善で獲得増、機会損失回避、指名(ブランド)防衛。",
-    consumer:"検索需要の変化を新ニーズの兆しとして商品・営業判断に活用。"},
+    internal:"競合が撤退したKWは獲得機会として入札強化／過熱KWはROIで予算再配分(深追いしない)／指名KW(三菱地所・パークハウス等)とマンション名KWは防衛。",
+    biz:"CPA・ROAS改善で査定申込を増やし、機会損失を回避。ブランド指名の刈り取りを守る。",
+    consumer:"検索需要の変化を売り時ニーズの兆しとして、査定提案・営業判断に活用。"},
   TD:{ theme:"広告文",
-    internal:"競合とかぶらない差別化訴求へTD改修／勝ちTD・表示オプションをA/B。",
-    biz:"CTR・品質スコア改善→CPC最適化、比較検討で選ばれやすい。",
-    consumer:"刺さり始めた文脈を事業のメッセージ・営業トークに転用。"},
+    internal:"競合(住友の「今が売り時」煽り)とかぶらない差別化訴求へTD改修／勝ち見出し・表示オプションをA/B。三菱地所グループの実績・適正査定を明記。",
+    biz:"CTR・品質スコア改善→CPC最適化。比較検討中の売主に選ばれやすくなる。",
+    consumer:"刺さり始めた文脈(相場・タイミング・税金)を営業トーク・提案資料に転用。"},
   LP:{ theme:"LP",
-    internal:"型の模倣でなくUSPが伝わるLP改善をA/B設計(FV・CTA・証拠要素)。",
-    biz:"CVR改善・離脱低下で獲得単価改善、強みが伝わり信頼↑。",
-    consumer:"強みが伝わる体験。改善はオーガニック来訪者にも波及。"},
+    internal:"型の模倣でなく、三菱地所グループの強み(実績・直営ネットワーク・安心)が伝わるLPをA/B設計(FV・CTA・証拠要素)。査定フォームの離脱を改善。",
+    biz:"CVR改善・離脱低下で査定獲得単価を改善。強みが伝わり信頼が高まる。",
+    consumer:"強みが伝わる査定体験。改善はオーガニック来訪の売主にも波及。"},
   CR:{ theme:"クリエイティブ",
-    internal:"追随せずUSP軸の差別化CRを制作・改善／勝ち筋を横展開・疲弊CRを差替。",
-    biz:"CTR・CVR改善・CPA低下、世界観の一貫でブランド資産↑。",
-    consumer:"ノイズでない広告体験で満足度↑、訴求傾向は商品開発ヒント。"},
+    internal:"追随せず、三菱地所グループの実績・信頼を軸にUSP差別化CRを制作／勝ち筋を横展開・疲弊CRを差替。競合が手薄な動画で先行。",
+    biz:"CTR・CVR改善・CPA低下。世界観の一貫でブランド資産(信頼)が積み上がる。",
+    consumer:"煽らない安心できる広告体験で満足度↑。訴求傾向は商品・サービス改善のヒント。"},
   NEWS:{ theme:"事業動向",
-    internal:"施策でなく上位の戦略提案(値下げは価値訴求で対抗)／経営向けアラート。",
-    biz:"先手でシェア低下を回避、経営意思決定の材料、継続率↑。",
-    consumer:"市場変化に合った価値提供、リスクの早期察知。"},
+    internal:"個別施策でなく上位の戦略提案(住友の商号変更・購入強化には価値訴求で対抗)／経営向けアラート。",
+    biz:"先手でシェア低下を回避、経営の意思決定材料になり、取引・継続率↑。",
+    consumer:"市場変化に合った売却・購入の価値提供、リスクの早期察知。"},
 };
 function playbook(cat){ return PLAYBOOK[cat] || PLAYBOOK.CR; }
 
 /* ============ 状態 ============ */
 let store = DEMO;               // 現在表示中のデータセット
 let isDemo = true;
+const DEFAULT_CSV = `
+週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値,ID,指標名,指標値
+2026/07/14週,KW,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,リスティング出稿KW・掲載順位の変化,,,Keywordmap取込。検知KW81件（上昇/新規81・下落/非表示0／表示は上位12件）。想定集客コスト上位: 売却 マンション（約50.6万円）。(出典: Keywordmap),ザ パーク ハウス 新規表示（→2位）;パークハウス 新規表示（→2位）;売却 マンション 新規表示（→6位）;マンション売却 税 新規表示（→6位）;プラウド成城 新規表示（→1位）;パークハウス文京関口 新規表示（→5位）;ザパークハウス相生山 新規表示（→5位）;渋谷藤和コープ 新規表示（→1位）;四条烏丸クロスマーク 新規表示（→2位）;パークハウス神楽坂 新規表示（→2位）;ザガーデンズ東京王子 新規表示（→5位）;洗足ミナミプラザ 新規表示（→5位）,,,,KW-三菱地所ハウスネット（自社）,想定流入数,2693
+2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: 三菱地所ハウスネット,,三菱地所ハウスネット ／ 安心と信頼の三菱地所グループ — 三菱地所グループの不動産売買仲介サイト。売主様、買主様の安心な不動産取引をサポート。不…,Keywordmap取込。想定流入数571・3KWで表示。(出典: Keywordmap),,,,,TD-三菱地所ハウスネット,想定流入数,571
+2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: パークハウスの売却はこちら | ザ・パークハウス,,パークハウスの売却はこちら | ザ・パークハウス ／ ザ・パークハウスのご売却なら三菱地所の住まいリレー。パークハウスのご売却は三菱地所の住まいリレーへお任せください。 周辺…,Keywordmap取込。想定流入数364・1KWで表示。(出典: Keywordmap),,,,,TD-パークハウスの売却はこちら | ザ・パークハウス,想定流入数,364
+2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: パークハウスの売却はこちら | 【公式】三菱地所の住…,,パークハウスの売却はこちら | 【公式】三菱地所の住まいリレー ／ パークハウスのご売却は三菱地所の住まいリレーへお任せください。 経験と実績を重ねてきた三菱地所グループの安心サービスでお…,Keywordmap取込。想定流入数364・1KWで表示。(出典: Keywordmap),,,,,TD-パークハウスの売却はこちら | 【公式】三菱地所の住まいリレー,想定流入数,364
+2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: プラウド成城,,プラウド成城 ／ 大手不動産会社だから安心 — 査定価格を知りたい方に！マンション・土地・一戸建ての無料査定依頼なら三菱地所の住まいリレー…,Keywordmap取込。想定流入数135・1KWで表示。(出典: Keywordmap),,,,,TD-プラウド成城,想定流入数,135
+2026/07/14週,TD,三菱地所ハウスネット（自社）,リスティング(Google/Yahoo),中,2026-07-04,広告見出し: 渋谷藤和コープ,,渋谷藤和コープ ／ 【公式】三菱地所の住まいリレー — 三菱地所グループ分譲マンションのご売却は三菱地所の住まいリレーへお任せください。 経…,Keywordmap取込。想定流入数92・1KWで表示。(出典: Keywordmap),,,,,TD-渋谷藤和コープ,想定流入数,92
+2026/07/14週,ニュース,住友不動産,プレスリリース,高,2025/04/01,「住友不動産ステップ」へ商号変更＋購入専門部署を新設,住友不動産販売,住友不動産ステップに商号変更／「ステップ購入エージェンシー」を首都圏5・関西1店に新設,購入検討層の囲い込みを強化。デジタル広告への全面移行・ステップオークションも推進（出典: 住友不動産ステップ公式／日経）,,,,,NEWS-sumitomo-shogo,,
+2026/07/14週,CR,住友不動産,GDN;Yahoo;Microsoft;Facebook;SmartNews,高,2026-07-15,クリエイティブ出稿の全体像,,総CR3698本（画像3403／動画281／カルーセル14）・新規CR3138本・LP1115本（新規LP1041）,ADクロール取込。表示回数約34万回。媒体内訳(CR数): GDN 1096／Yahoo 855／Microsoft 379／Facebook 319／SmartNews 315／Instagram 289。出稿期間 2020-01-22〜2026-07-15。(出典: ADクロール),,,,,CR-summary,表示回数,340495
+2026/07/14週,CR,住友不動産,Microsoft,中,2026-07-15,主要クリエイティブ訴求: 【この二択】あなたはどうする？不動産価格が高水準の今…,,【この二択】あなたはどうする？不動産価格が高水準の今！賢い選択をご提案します,ADクロール取込。表示回数(7日増)809・9クリエイティブ・1媒体。(出典: ADクロール),,,,,CR-【この二択】あなたはどうする？不動産価格が高水準の今！賢い選択をご提案します,表示回数(7日増),809
+2026/07/14週,CR,住友不動産,Microsoft;Instagram;Facebook,中,2026-07-15,主要クリエイティブ訴求: 意外と知らない！我が家の資産価値って？最新の相場から…,,意外と知らない！我が家の資産価値って？最新の相場から資産価値をお伝えします！,ADクロール取込。表示回数(7日増)731・9クリエイティブ・3媒体。(出典: ADクロール),,,,,CR-意外と知らない！我が家の資産価値って？最新の相場から資産価値をお伝えします！,表示回数(7日増),731
+2026/07/14週,CR,住友不動産,SmartNews,中,2026-07-15,主要クリエイティブ訴求: 「今の価値を知りたい」住友不動産ステップの無料査定が…,,「今の価値を知りたい」住友不動産ステップの無料査定が選ばれる理由とは？,ADクロール取込。表示回数(7日増)527・29クリエイティブ・1媒体。リード: 事例多数！最新の相場と市場傾向から適切なプランをご提案。賢く売却するならまずはプ…。(出典: ADクロール),,,,,CR-「今の価値を知りたい」住友不動産ステップの無料査定が選ばれる理由とは？,表示回数(7日増),527
+2026/07/14週,CR,住友不動産,Youtube;Yahoo;GDN;Microsoft,中,2026-07-15,主要クリエイティブ訴求: 最新の相場と傾向お教えします,,最新の相場と傾向お教えします,ADクロール取込。表示回数(7日増)319・606クリエイティブ・5媒体。リード: 事例多数！まずは現在の資産価値と需要を確認してみませんか。30秒でできるカンタン…。(出典: ADクロール),,,,,CR-最新の相場と傾向お教えします,表示回数(7日増),319
+2026/07/14週,CR,住友不動産,Yahoo;Microsoft;GDN;LINE,中,2026-07-15,主要クリエイティブ訴求: 今後の不動産価格どうなる？,,今後の不動産価格どうなる？,ADクロール取込。表示回数(7日増)267・36クリエイティブ・4媒体。リード: 不動産のプロが解説！今の時期だからこその売却戦略をご案内！実績多数安心してお任せ…。(出典: ADクロール),,,,,CR-今後の不動産価格どうなる？,表示回数(7日増),267
+2026/07/14週,CR,住友不動産,Youtube;Yahoo;Microsoft,中,2026-07-15,主要クリエイティブ訴求: 本当に？[購入10年]我が家の価値,,本当に？[購入10年]我が家の価値,ADクロール取込。表示回数(7日増)236・18クリエイティブ・3媒体。リード: 意外にもこんなに高いの？という声が続々！高く売れた事例・適切な売却方法をご案内。(出典: ADクロール),,,,,CR-本当に？[購入10年]我が家の価値,表示回数(7日増),236
+2026/07/14週,CR,住友不動産,Microsoft,中,2026-07-15,主要クリエイティブ訴求: 売るか迷う…今の価値を確認から,,売るか迷う…今の価値を確認から,ADクロール取込。表示回数(7日増)201・3クリエイティブ・1媒体。(出典: ADクロール),,,,,CR-売るか迷う…今の価値を確認から,表示回数(7日増),201
+2026/07/14週,LP,住友不動産,Microsoft;Yahoo;LINE;GDN,中,2026-07-15,誘導LP: 不動産査定なら｜【住友不動産販売】全国に広がる直営仲…,,https://www.stepon.co.jp/lp/uri/?argument=nodf34lq,ADクロール取込。CR数825・LP表示回数約20.4万回・4媒体。説明: 不動産の査定なら 【住友不動産販売】にお任せください!!住友不動産販売は全国に広がる営業ネットワーク…。(出典: ADクロール),,,,,LP-https://www.stepon.co.jp/lp/uri/?argument=nodf34lq,LP表示回数,203659
+2026/07/14週,LP,住友不動産,SmartNews;Facebook;Instagram,中,2026-07-15,誘導LP: 不動産の好条件売却ができる理由があります | 住友不…,,https://kiwamilp.stepon.co.jp/876e1c59/index.html?argument=nodf34lq,ADクロール取込。CR数919・LP表示回数約10.6万回・3媒体。説明: あなたの住まいは今いくら？売却する時期はいつがいい? 我が家も本当に売却できる？住友不動産販売が最新…。(出典: ADクロール),,,,,LP-https://kiwamilp.stepon.co.jp/876e1c59/index.html?argument=nodf34lq,LP表示回数,106166
+2026/07/14週,LP,住友不動産,Yahoo;LINE,中,2025-12-13,誘導LP: 不動産の好条件売却ができる理由があります | 住友不…,,https://kiwamilp.stepon.co.jp/eb1daa7f/index.html?argument=nodf34lq,ADクロール取込。CR数63・LP表示回数2931回・2媒体。説明: あなたの住まいは今いくら？売却する時期はいつがいい? 我が家も本当に売却できる？住友不動産ステップが…。(出典: ADクロール),,,,,LP-https://kiwamilp.stepon.co.jp/eb1daa7f/index.html?argument=nodf34lq,LP表示回数,2931
+2026/07/14週,LP,住友不動産,Yahoo;dメニュー,中,2026-07-12,誘導LP: 不動産の好条件売却ができる理由があります | 住友不…,,https://www.stepon.co.jp/lp/uri/?argument=nodf34lq&_ly_src=da,ADクロール取込。CR数121・LP表示回数2675回・2媒体。説明: あなたの住まいは今いくら？売却する時期はいつがいい? 我が家も本当に売却できる？住友不動産ステップが…。(出典: ADクロール),,,,,LP-https://www.stepon.co.jp/lp/uri/?argument=nodf34lq&_ly_src=da,LP表示回数,2675
+2026/07/14週,LP,住友不動産,Yahoo;LINE,中,2026-07-09,誘導LP: 不動産の好条件売却ができる理由があります | 住友不…,,https://kiwamilp.stepon.co.jp/37953cab/index.html?argument=nodf34lq,ADクロール取込。CR数23・LP表示回数2581回・2媒体。説明: あなたの住まいは今いくら？売却する時期はいつがいい? 我が家も本当に売却できる？住友不動産ステップが…。(出典: ADクロール),,,,,LP-https://kiwamilp.stepon.co.jp/37953cab/index.html?argument=nodf34lq,LP表示回数,2581
+2026/07/14週,LP,住友不動産,Yahoo,中,2026-07-10,誘導LP: 不動産の好条件売却ができる理由があります | 住友不…,,https://kiwamilp.stepon.co.jp/eb1daa7f/index.html?argument=nodf34lq&_ly_src=da,ADクロール取込。CR数26・LP表示回数2409回・1媒体。説明: あなたの住まいは今いくら？売却する時期はいつがいい? 我が家も本当に売却できる？住友不動産ステップが…。(出典: ADクロール),,,,,LP-https://kiwamilp.stepon.co.jp/eb1daa7f/index.html?argument=nodf34lq&_ly_src=da,LP表示回数,2409
+2026/07/14週,KW,住友不動産,リスティング(Google/Yahoo),高,2026-07-14,リスティング出稿KW・掲載順位の変化,,,Keywordmap取込。検知KW6件（上昇/新規4・下落/非表示2）。想定集客コスト上位: 住友不動産 採用 中途（約0.3万円）。(出典: Keywordmap),住友不動産 転職 新規表示（→5位）;住友不動産 業務職 新規表示（→5位）;住友不動産 事務 求人 （5→1位）;住友不動産 cadオペレーター （5→1位）,住友 不動産 求人 （1→5位）;住友不動産 採用 中途 （1→2位）,,,KW-住友不動産,想定流入数,37
+2026/07/14週,TD,住友不動産,リスティング(Google/Yahoo),中,2026-07-14,広告見出し: 住友不動産／キャリア採用,,住友不動産／キャリア採用 ／ 住友不動産の採用情報 — 総合デベロッパーとしてビルやマンション開発等幅広く展開。業界トップクラスの安定した事業基盤。戸…,Keywordmap取込。想定流入数31・5KWで表示。(出典: Keywordmap),,,,,TD-住友不動産／キャリア採用,想定流入数,31
+2026/07/14週,TD,住友不動産,リスティング(Google/Yahoo),中,2026-07-14,広告見出し: 住友不動産／キャリア採用 - 住友不動産の採用情報 …,,住友不動産／キャリア採用 - 住友不動産の採用情報 - 正社員採用なら ／ 総合デベロッパーとしてビルやマンション開発等幅広く展開。業界トップクラスの安定した事業基盤,Keywordmap取込。想定流入数3・1KWで表示。(出典: Keywordmap),,,,,TD-住友不動産／キャリア採用 - 住友不動産の採用情報 - 正社員採用なら,想定流入数,3
+2026/07/14週,TD,住友不動産,リスティング(Google/Yahoo),中,2026-07-14,広告見出し: 住友不動産の採用情報,,住友不動産の採用情報 ／ 住友不動産／キャリア採用 — 総合デベロッパーとしてビルやマンション開発等幅広く展開。業界トップクラスの安定した事業基盤…,Keywordmap取込。想定流入数3・3KWで表示。(出典: Keywordmap),,,,,TD-住友不動産の採用情報,想定流入数,3
+2026/07/14週,TD,住友不動産,リスティング(Google/Yahoo),中,2026-07-14,広告見出し: 住友不動産/積極採用中,,住友不動産/積極採用中 ／ 事務職も募集中 — 【営業経験者歓迎】異業種転職者が多数在籍。未経験でも高年収を目指せます。 戸建やリフォームの営業だけ…,Keywordmap取込。想定流入数0・1KWで表示。(出典: Keywordmap),,,,,TD-住友不動産/積極採用中,想定流入数,0
+`;
+const DEFAULT_SUBJECT = "三菱地所ハウスネット";
 const state = {week:null, cat:"all", comp:"all", q:""};
 
 const $ = s => document.querySelector(s);
@@ -513,7 +551,8 @@ function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({'&':'&amp;','<
 /* ============ 差分(前週比較) ============ */
 let baseline=null; // {keys:Set, events:[], label}
 function norm(s){return String(s||"").toLowerCase().replace(/\s+/g,"").replace(/[　、。｜|・！？!?]/g,"");}
-function keyOf(e){ return e.comp+"|"+e.cat+"|"+(e.cat==="KW"?"KW":norm(e.after||e.title)); }
+function keyOf(e){ return e.comp+"|"+(e.id ? e.id : (e.cat==="KW"?"KW":norm(e.after||e.title))); }
+function fmtNum(n){ return Number(n).toLocaleString("en-US"); }
 function curEvents(){ return store.weeks[state.week]?store.weeks[state.week].events:[]; }
 function diffOf(){
   if(!baseline) return null;
@@ -575,6 +614,9 @@ const HKEY = {
   "入札下落":"kwDown","kwdown":"kwDown","下落kw":"kwDown","除外kw":"kwDown",
   "ネクストアクション":"action","アクション":"action","社内アクション":"action","action":"action","指示":"action",
   "社外価値":"value","社外への価値":"value","value":"value","価値":"value",
+  "id":"id","識別子":"id",
+  "指標名":"metricLabel","指標":"metricLabel","metriclabel":"metricLabel",
+  "指標値":"metric","metric":"metric","数値":"metric",
 };
 function normCat(v){
   const s=(v||"").trim().toUpperCase();
@@ -615,7 +657,9 @@ function buildFromRows(rows){
       sev:normSev(get(r,"sev")), date:get(r,"date")||"—",
       title:get(r,"title"), before:get(r,"before")||"—", after:get(r,"after")||"—",
       note:get(r,"note")||"", diffType, kwUp, kwDown,
-      action:get(r,"action")||"", value:get(r,"value")||""
+      action:get(r,"action")||"", value:get(r,"value")||"",
+      id:get(r,"id")||"", metricLabel:get(r,"metricLabel")||"",
+      metric: get(r,"metric")!=="" ? Number(String(get(r,"metric")).replace(/[^0-9.-]/g,"")) : null
     });
   }
   if(!events.length) throw new Error("有効なデータ行がありません。");
@@ -750,6 +794,11 @@ function buildReport(){
       } else {
         P(`- 変化: 「${e.before}」→「${e.after}」`);
       }
+      if(e.metric!=null){
+        const be=baseline?baseline.byKey.get(keyOf(e)):null;
+        const dl=(be&&be.metric!=null)?e.metric-be.metric:null;
+        P(`- 📈 ${e.metricLabel||'指標'}: ${fmtNum(e.metric)}${dl!=null?`（前週比 ${dl>=0?'＋':'−'}${fmtNum(Math.abs(dl))}）`:''}`);
+      }
       if(e.note) P(`- 🤖 観測: ${e.note}`);
       P(`- 🎯 社内: ${a.internal}`);
       P(`- 🎁 価値: 事業者→${a.biz}／生活者→${a.consumer}`);
@@ -770,7 +819,7 @@ function buildReport(){
   P(``);
   P(`> ※ 社外価値は2層 — 事業者（継続率↑）→ 生活者（満足度↑）。KW・TD・LP・CRは運用改善、ニュースは戦略・経営提案。`);
   P(``);
-  P(`— まるっと競合分析くん（${isDemo?"デモ":"読み込み"}データ）`);
+  P(`— まるっと競合分析くん ／ 三菱地所ハウスネット様 競合ウォッチ（${isDemo?"初期":"読み込み"}データ）`);
   return L.join("\n");
 }
 
@@ -808,7 +857,7 @@ function renderAI(){
   $("#aiPanel").innerHTML = `
     <div class="ai-head">
       <span class="spark">✨</span><b>AIサマリー</b>
-      <span class="tag">${isDemo?"デモ":"読み込みデータから生成"} ・ 週次</span>
+      <span class="tag">${isDemo?"初期データ":"読み込みデータから生成"} ・ 週次</span>
     </div>
     <div class="ai-body">
       <p class="lead">${s.lead}</p>
@@ -829,7 +878,13 @@ function passFilter(e){
   }
   return true;
 }
-function cardHtml(e, badge, ghost){
+function deltaHtml(delta){
+  if(delta==null || delta===0) return delta===0?`<span class="delta flat">±0</span>`:"";
+  const up=delta>0;
+  return `<span class="delta ${up?'up':'down'}">${up?'＋':'−'}${fmtNum(Math.abs(delta))}</span>`;
+}
+function cardHtml(e, badge, ghost, delta){
+  const metric = (e.metric!=null) ? `<div class="metric">📈 <span class="mlbl">${esc(e.metricLabel||'指標')}</span> <b>${fmtNum(e.metric)}</b>${deltaHtml(delta)}${delta!=null?'<span class="mnote">前週比</span>':''}</div>` : "";
   let body="";
   if(e.diffType==="kw"){
     body=`<div class="diff">
@@ -855,6 +910,7 @@ function cardHtml(e, badge, ghost){
     <div class="card-body">
       <div class="title-chg">${esc(e.title)}</div>
       ${body}
+      ${metric}
       ${ghost?`<div class="ai-note"><span class="ic">⚠</span><span><b>前週比:</b> 今週は検知されず（出稿停止の可能性＝獲得の好機）</span></div>`
              :`${e.note?`<div class="ai-note"><span class="ic">🤖</span><span><b>観測:</b> ${esc(e.note)}</span></div>`:""}${actionBlock(e)}`}
     </div>
@@ -871,19 +927,35 @@ function renderFeed(){
     : `${list.length} 件を表示中 / 全 ${all.length} 件`;
   if(!list.length && !goneList.length){ $("#feed").innerHTML=`<div class="empty">条件に一致する変化点はありません。</div>`; return; }
   const badgeOf=e=> d ? (d.isNew(e)?`<span class="badge-diff new">🆕 新規</span>`:`<span class="badge-diff keep">↔ 継続</span>`) : "";
-  const cards=list.map(e=>cardHtml(e, badgeOf(e), false));
-  const ghosts=goneList.map(e=>cardHtml(e, `<span class="badge-diff gone">⚠ 消滅</span>`, true));
+  const deltaOf=e=>{
+    if(!baseline) return null;
+    const be=baseline.byKey.get(keyOf(e));
+    return (be && e.metric!=null && be.metric!=null) ? (e.metric-be.metric) : null;
+  };
+  const cards=list.map(e=>cardHtml(e, badgeOf(e), false, deltaOf(e)));
+  const ghosts=goneList.map(e=>cardHtml(e, `<span class="badge-diff gone">⚠ 消滅</span>`, true, null));
   $("#feed").innerHTML = cards.join("") + ghosts.join("");
 }
 function renderUpdated(){
   const media = isDemo
-    ? "Google / Yahoo! / Meta / LINE / TikTok / YouTube / プレスリリース"
+    ? "Keywordmap（検索リスティング）／ADクロール（CR・LP）／Web収集（ニュース）"
     : "読み込んだデータの媒体列を使用";
   $("#updated").textContent =
-    (isDemo ? "デモデータで表示中 ・ " : "読み込みデータで表示中 ・ ")
+    (isDemo ? "三菱地所ハウスネット様 初期データで表示中 ・ " : "読み込みデータで表示中 ・ ")
     + "監視媒体: " + media;
 }
 function renderAll(){ renderWeekSel(); renderCompChips(); renderKpis(); renderAI(); renderFeed(); renderUpdated(); }
+
+/* 初期表示（三菱地所ハウスネット様の実データ） */
+function applyDefault(){
+  store = buildFromRows(parseDelimited(DEFAULT_CSV, ","));
+  isDemo = true; baseline=null;
+  state.week=store.order[0]; state.cat="all"; state.comp="all"; state.q="";
+  const qEl=$("#q"); if(qEl) qEl.value="";
+  $("#catFilter").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.cat==="all"));
+  const subj=$("#subj"); if(subj){ subj.value=DEFAULT_SUBJECT; const pill=$("#subjPill"); if(pill){ pill.hidden=false; pill.textContent=DEFAULT_SUBJECT; } }
+  renderAll();
+}
 
 /* ============ データ読み込み ============ */
 function loadText(text){
@@ -943,18 +1015,15 @@ $("#csvFile").addEventListener("change",e=>{
   e.target.value="";
 });
 $("#tplBtn").addEventListener("click",downloadTemplate);
-$("#resetBtn").addEventListener("click",()=>{
-  store=DEMO; isDemo=true; baseline=null; state.week=store.order[0]; state.cat="all"; state.comp="all"; state.q=""; $("#q").value="";
-  $("#catFilter").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x.dataset.cat==="all"));
-  renderAll(); msg("デモデータに戻しました。","demo");
-});
+$("#resetBtn").addEventListener("click",()=>{ applyDefault(); msg("初期表示（三菱地所ハウスネット）に戻しました。","demo"); });
 
 /* 前週CSV(差分比較) */
 function loadBaseline(text){
   const built=buildFromRows(parseDelimited(text, detectDelim(text)));
   const events=built.order.flatMap(k=>built.weeks[k].events);
   if(!events.length) throw new Error("前週データに有効な行がありません。");
-  baseline={ keys:new Set(events.map(keyOf)), events, label:built.weeks[built.order[0]].label };
+  const byKey=new Map(); events.forEach(e=>byKey.set(keyOf(e),e));
+  baseline={ keys:new Set(events.map(keyOf)), events, byKey, label:built.weeks[built.order[0]].label };
   renderFeed();
   msg(`前週データを読み込みました（${events.length}件）。今週との差分を表示中です。`, "ok");
 }
@@ -1010,7 +1079,7 @@ $("#themeBtn").addEventListener("click",()=>{
   document.documentElement.setAttribute("data-theme",next);
 });
 
-renderAll();
+applyDefault();
 </script>
 </body>
 </html>

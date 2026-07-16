@@ -39,7 +39,7 @@ const clip = (s,n)=> s.length>n ? s.slice(0,n)+"…" : s;
 const jp = v => v>=10000 ? `約${Math.round(v/1000)/10}万回` : `${v}回`; // 340495 -> 約34万回
 
 const out=[];
-const HEAD="週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値";
+const HEAD="週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値,ID,指標名,指標値";
 
 /* --- CRサマリー (brand) --- */
 if (BRAND){
@@ -53,7 +53,7 @@ if (BRAND){
     const topMedia=media.slice(0,5).map(x=>x[0]);
     const now=`総CR${num(g(r,"CR数"))}本（画像${num(g(r,"CR数(画像のみ)"))}／動画${num(g(r,"CR数(動画のみ)"))}／カルーセル${num(g(r,"CR数(カルーセルのみ)"))}）・新規CR${num(g(r,"新規CR数"))}本・LP${num(g(r,"LP数"))}本（新規LP${num(g(r,"新規LP数"))}）`;
     const memo=`ADクロール取込。表示回数${jp(num(g(r,"表示回数")))}。媒体内訳(CR数): ${media.slice(0,6).map(x=>`${x[0]} ${x[1]}`).join("／")}。出稿期間 ${g(r,"初回出稿日")}〜${g(r,"最新出稿日")}。(出典: ADクロール)`;
-    out.push([WEEK,"CR",COMP,topMedia.join(";"),"高",g(r,"最新出稿日"),"クリエイティブ出稿の全体像","",now,memo,"","","",""]);
+    out.push([WEEK,"CR",COMP,topMedia.join(";"),"高",g(r,"最新出稿日"),"クリエイティブ出稿の全体像","",now,memo,"","","","","CR-summary","表示回数",String(num(g(r,"表示回数")))]);
   }
 }
 
@@ -75,7 +75,7 @@ if (CREATIVE){
     const memo=`ADクロール取込。表示回数(7日増)${o.imp7}・${o.cnt}クリエイティブ・${o.media.size}媒体`
       + (o.lead?`。リード: ${clip(o.lead,40)}`:"")+`。(出典: ADクロール)`;
     out.push([WEEK,"CR",COMP,[...o.media].slice(0,4).join(";"),"中",o.last,
-      "主要クリエイティブ訴求: "+clip(t,26),"",t,memo,"","","",""]);
+      "主要クリエイティブ訴求: "+clip(t,26),"",t,memo,"","","","",`CR-${t}`,"表示回数(7日増)",String(o.imp7)]);
   }
 }
 
@@ -98,7 +98,7 @@ if (LP){
     const memo=`ADクロール取込。CR数${o.cr}・LP表示回数${jp(o.imp)}・${o.media.size}媒体`
       +(o.desc?`。説明: ${clip(o.desc,50)}`:"")+`。(出典: ADクロール)`;
     out.push([WEEK,"LP",COMP,[...o.media].slice(0,4).join(";"),"中",o.last,
-      "誘導LP: "+clip(o.title||url,26),"",url,memo,"","","",""]);
+      "誘導LP: "+clip(o.title||url,26),"",url,memo,"","","","",`LP-${url}`,"LP表示回数",String(o.imp)]);
   }
 }
 

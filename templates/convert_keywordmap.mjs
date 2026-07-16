@@ -63,9 +63,10 @@ for (const file of FILES){
   for (let i=1;i<rows.length;i++){
     const r=rows[i]; if(!r[ci.kw]) continue;
     const name = nameOf(r[ci.disp]||r[ci.lp]);
-    (byName[name] ||= {up:[],down:[],date:"",cost:0,topCost:{kw:"",v:0},titles:{}});
+    (byName[name] ||= {up:[],down:[],date:"",cost:0,topCost:{kw:"",v:0},titles:{},infl:0});
     const o=byName[name];
     const dt=(r[ci.date]||"").trim(); if(dt>o.date) o.date=dt;
+    o.infl+=n(r[ci.infl]);
     // TD(広告文)集計: タイトルごとに想定流入数を積算
     const title=(r[ci.title]||"").trim();
     if(title){
@@ -89,7 +90,7 @@ for (const file of FILES){
 }
 
 // 出力
-const HEAD="週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値";
+const HEAD="週,カテゴリ,競合,媒体,重要度,日付,タイトル,先週,今週,AIメモ,入札上昇,入札下落,ネクストアクション,社外価値,ID,指標名,指標値";
 const lines=[HEAD];
 const CAP=12;
 const fmt = arr => arr.sort((a,b)=>b.vol-a.vol).slice(0,CAP)
@@ -108,7 +109,8 @@ for (const [name,o] of Object.entries(byName)){
     const row=[
       WEEK, "KW", name, "リスティング(Google/Yahoo)", sev, o.date||"取込日",
       "リスティング出稿KW・掲載順位の変化", "", "",
-      memo, fmt(o.up), fmt(o.down), "", ""
+      memo, fmt(o.up), fmt(o.down), "", "",
+      `KW-${name}`, "想定流入数", String(o.infl||0)
     ].map(csvEsc);
     lines.push(row.join(","));
   }
@@ -120,7 +122,8 @@ for (const [name,o] of Object.entries(byName)){
     const tdMemo=`Keywordmap取込。想定流入数${t.infl}・${t.kws}KWで表示。(出典: Keywordmap)`;
     lines.push([
       WEEK, "TD", name, "リスティング(Google/Yahoo)", "中", o.date||"取込日",
-      "広告見出し: "+clip(title,26), "", now, tdMemo, "", "", "", ""
+      "広告見出し: "+clip(title,26), "", now, tdMemo, "", "", "", "",
+      `TD-${title}`, "想定流入数", String(t.infl||0)
     ].map(csvEsc).join(","));
   }
 }
