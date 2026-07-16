@@ -78,6 +78,46 @@
   .logo svg{width:40px;height:40px;display:block}
   @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
   @media (prefers-reduced-motion:reduce){.logo{animation:none}}
+
+  /* ==== マスコットをあちこちに ==== */
+  .mascot{display:block;width:100%;height:100%}
+  @keyframes bob2{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-6px) rotate(2deg)}}
+  @keyframes bob3{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  @keyframes wiggle{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+  @keyframes pop{0%{transform:scale(0) rotate(-20deg);opacity:0}70%{transform:scale(1.12) rotate(6deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+  /* 背景に漂うマスコット（うっすら） */
+  .bg-mascots{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .bg-mascots .m{position:absolute;opacity:.06;filter:saturate(.85)}
+  .bg-mascots .m1{width:150px;height:150px;left:-38px;top:38%;animation:bob3 7s ease-in-out infinite}
+  .bg-mascots .m2{width:110px;height:110px;right:2%;top:12%;animation:bob2 9s ease-in-out infinite}
+  .bg-mascots .m3{width:90px;height:90px;right:8%;bottom:6%;animation:bob3 8s ease-in-out infinite}
+  .bg-mascots .m4{width:120px;height:120px;left:6%;bottom:10%;animation:bob2 10s ease-in-out infinite}
+  /* セクション見出しのミニマスコット */
+  .section-h .mini-m{width:26px;height:26px;flex:none;margin-left:-2px;animation:bob3 4.5s ease-in-out infinite}
+  /* 空状態のマスコット */
+  .empty .em-m{width:96px;height:96px;margin:0 auto 12px;animation:bob3 4s ease-in-out infinite}
+  .empty .em-m.sleepy{animation:none}
+  .empty b{display:block;color:var(--ink-2);font-size:14px;margin-bottom:4px}
+  /* KPIカードの角にちょこん */
+  .kpi .peek{position:absolute;right:-10px;bottom:-12px;width:52px;height:52px;opacity:.16;
+    transition:opacity .18s, transform .18s;transform:rotate(-6deg)}
+  .kpi:hover .peek{opacity:.5;transform:rotate(2deg) translateY(-2px)}
+  /* AIヘッドのマスコット */
+  .ai-head .head-m{width:30px;height:30px;flex:none;animation:bob3 4s ease-in-out infinite}
+  /* 概要カードのマスコット */
+  .ov-card .ovm{position:absolute;right:-8px;bottom:-10px;width:46px;height:46px;opacity:.18;
+    transition:opacity .18s, transform .18s;transform:rotate(-6deg)}
+  .ov-card:hover .ovm{opacity:.6;transform:scale(1.1) rotate(3deg) translateY(-2px)}
+  /* 吹き出しでひとこと */
+  .m-tip{display:flex;align-items:center;gap:11px;margin:14px 2px 2px;padding:11px 15px 11px 12px;
+    background:var(--panel);border:1.5px solid var(--line);border-radius:16px;box-shadow:var(--shadow);position:relative}
+  .m-tip .avatar{width:44px;height:44px;flex:none;animation:bob3 4s ease-in-out infinite}
+  .m-tip .bubble{font-size:12.5px;color:var(--ink);line-height:1.55}
+  .m-tip .bubble b{color:var(--accent)}
+  @media (prefers-reduced-motion:reduce){
+    .bg-mascots .m,.section-h .mini-m,.empty .em-m,.ai-head .head-m,.ov-card .ovm,.m-tip .avatar{animation:none}
+  }
+  @media (max-width:760px){.bg-mascots .m1,.bg-mascots .m4{display:none}}
   .titles h1{margin:0;font-size:20px;letter-spacing:.02em;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .subj-pill{font-size:11px;font-weight:600;background:var(--accent);color:#fff;padding:3px 10px;border-radius:20px;letter-spacing:.02em}
   .titles p{margin:2px 0 0;font-size:12.5px;color:#c9d1d9;opacity:.85}
@@ -305,7 +345,7 @@
   /* 概要ダッシュボード ウィジェット */
   .ov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:6px}
   .ov-card{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
-    padding:15px 17px;cursor:pointer;transition:transform .14s,box-shadow .14s,border-color .14s}
+    padding:15px 17px;cursor:pointer;transition:transform .14s,box-shadow .14s,border-color .14s;position:relative;overflow:hidden}
   .ov-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(38,50,79,.10);border-color:color-mix(in srgb,var(--accent) 38%,var(--line))}
   .ov-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px;margin-bottom:11px}
   .ov-h .go{margin-left:auto;font-size:11px;color:var(--accent);font-weight:700}
@@ -341,7 +381,7 @@
   @media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.tb-right{margin-left:0;width:100%}.subj-input{flex:1}}
 
   /* ===== サイドバー + メイン レイアウト ===== */
-  .app{display:flex;min-height:100vh;align-items:stretch}
+  .app{display:flex;min-height:100vh;align-items:stretch;position:relative;z-index:1}
   .sidebar{width:254px;flex:none;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;
     padding:16px 14px;gap:8px;color:#c6d0df;
     background:linear-gradient(180deg,#213152 0%,#1b2740 62%,#1a2338 100%);
@@ -390,6 +430,7 @@
 </style>
 </head>
 <body>
+<div class="bg-mascots" id="bgMascots" aria-hidden="true"></div>
 <div class="app">
   <aside class="sidebar">
     <div class="side-brand">
@@ -794,6 +835,42 @@ const state = {week:null, cat:"all", comp:"all", q:"", autoCompare:false, sig:"a
 
 const $ = s => document.querySelector(s);
 function esc(s){return String(s==null?"":s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ============ マスコット（あちこちに散らばる🫧） ============ */
+/* variant: happy(既定) / wink / sleepy / cheer / think / search
+   cls: 付与するクラス（サイズ・アニメ等） */
+function mascot(variant="happy", cls=""){
+  const feet=`<ellipse cx="24" cy="55" rx="9" ry="4" fill="#3aa6a6" opacity=".45"/><ellipse cx="40" cy="55" rx="9" ry="4" fill="#3aa6a6" opacity=".45"/>`;
+  const body=`<circle cx="32" cy="30" r="22" fill="#5cc6c6"/>`;
+  const armL=`<ellipse cx="10" cy="34" rx="4" ry="6" fill="#4fbcbc"/>`;
+  const face=`<ellipse cx="32" cy="31" rx="15" ry="17" fill="#f3fbfa"/>`;
+  const cheeks=`<circle cx="21" cy="35" r="2.4" fill="#f4a6c0" opacity=".85"/><circle cx="43" cy="35" r="2.4" fill="#f4a6c0" opacity=".85"/>`;
+  const eyeOpen=(x)=>`<ellipse cx="${x}" cy="30" rx="3.6" ry="4.4" fill="#26324f"/><circle cx="${x+1.2}" cy="28.4" r="1.2" fill="#fff"/>`;
+  const eyeArc=(x)=>`<path d="M${x-3.4} 31 q3.4 -3.4 6.8 0" stroke="#26324f" stroke-width="1.9" fill="none" stroke-linecap="round"/>`;
+  const eyeLine=(x)=>`<path d="M${x-3.4} 30.5 q3.4 2.6 6.8 0" stroke="#26324f" stroke-width="1.9" fill="none" stroke-linecap="round"/>`;
+  const eyeUp=(x)=>`<ellipse cx="${x}" cy="28.6" rx="3.6" ry="4.4" fill="#26324f"/><circle cx="${x+1.2}" cy="26.8" r="1.2" fill="#fff"/>`;
+  const smile=`<path d="M28 37 q4 3.4 8 0" stroke="#26324f" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+  const smileBig=`<path d="M27.5 36.5 q4.5 5 9 0 z" fill="#e0567c"/><path d="M27.5 36.5 q4.5 5 9 0" stroke="#26324f" stroke-width="1.6" fill="none" stroke-linecap="round"/>`;
+  const mouthO=`<ellipse cx="32" cy="38" rx="2.4" ry="2.9" fill="#e0567c"/>`;
+  let eyes, mouth, extra="";
+  switch(variant){
+    case "wink":  eyes=eyeOpen(38)+eyeArc(26); mouth=smile; break;
+    case "sleepy":eyes=eyeLine(26)+eyeLine(38); mouth=`<ellipse cx="32" cy="38" rx="1.8" ry="2.2" fill="#e0567c"/>`;
+                  extra=`<text x="46" y="18" font-size="9" fill="#4fbcbc" font-weight="700">z</text><text x="52" y="12" font-size="7" fill="#8fdada" font-weight="700">z</text>`; break;
+    case "cheer": eyes=eyeArc(26)+eyeArc(38); mouth=smileBig;
+                  extra=`<text x="8" y="16" font-size="12" fill="#ffd36b">✦</text><text x="49" y="20" font-size="9" fill="#f4a6c0">✦</text>`; break;
+    case "think": eyes=eyeUp(26)+eyeUp(38); mouth=mouthO;
+                  extra=`<circle cx="50" cy="20" r="2" fill="#26324f" opacity=".6"/><circle cx="55" cy="15" r="3" fill="#26324f" opacity=".45"/>`; break;
+    case "search":eyes=eyeOpen(26)+eyeOpen(38); mouth=smile;
+                  extra=`<g transform="translate(40 38)"><circle cx="6" cy="6" r="7.5" fill="#fce08a" stroke="#f4a6c0" stroke-width="2.4"/><rect x="10.5" y="10.5" width="3" height="7" rx="1.5" transform="rotate(45 12 14)" fill="#26324f"/></g>`; break;
+    default:      eyes=eyeOpen(26)+eyeOpen(38); mouth=smile;
+  }
+  const arms = variant==="cheer"
+    ? `<ellipse cx="12" cy="24" rx="4" ry="6" fill="#4fbcbc" transform="rotate(-28 12 24)"/><ellipse cx="52" cy="24" rx="4" ry="6" fill="#4fbcbc" transform="rotate(28 52 24)"/>`
+    : armL;
+  return `<svg viewBox="0 0 64 64" class="mascot ${cls}" role="img" aria-hidden="true">`
+    + feet+body+arms+face+eyes+cheeks+mouth+extra+`</svg>`;
+}
 
 /* ============ 差分(前週比較) ============ */
 let baseline=null; // {keys:Set, events:[], label}
@@ -1237,13 +1314,14 @@ function renderCompChips(){
 function renderKpis(){
   const k=store.weeks[state.week].kpis;
   const cards=[
-    {lbl:"監視中の競合", val:k.competitors, sub:"データ横断で自動追跡", dot:"var(--info)"},
-    {lbl:"検知した変化点", val:k.changes, sub:"選択中の週の合計", dot:"var(--accent)"},
-    {lbl:"新規CR", val:k.newCR, sub:"クリエイティブの変化", dot:"var(--add)"},
-    {lbl:"要対応アラート", val:k.alerts, sub:"高インパクトの変化", dot:"var(--rm)"},
+    {lbl:"監視中の競合", val:k.competitors, sub:"データ横断で自動追跡", dot:"var(--info)", mv:"search"},
+    {lbl:"検知した変化点", val:k.changes, sub:"選択中の週の合計", dot:"var(--accent)", mv:"happy"},
+    {lbl:"新規CR", val:k.newCR, sub:"クリエイティブの変化", dot:"var(--add)", mv:"cheer"},
+    {lbl:"要対応アラート", val:k.alerts, sub:"高インパクトの変化", dot:"var(--rm)", mv:"think"},
   ];
   $("#kpis").innerHTML = cards.map(c=>`
     <div class="kpi" style="--kc:${c.dot}">
+      ${mascot(c.mv,"peek")}
       <div class="lbl"><span class="dot" style="background:${c.dot};color:${c.dot}"></span>${c.lbl}</div>
       <div class="val tnum">${c.val}<small> 件</small></div>
       <div class="sub">${c.sub}</div>
@@ -1253,7 +1331,7 @@ function renderAI(){
   const s=store.weeks[state.week].summary;
   $("#aiPanel").innerHTML = `
     <div class="ai-head">
-      <span class="spark">✨</span><b>AIサマリー</b>
+      ${mascot("happy","head-m")}<b>AIサマリー</b>
       <span class="tag">${isDemo?"初期データ":"読み込みデータから生成"} ・ 週次</span>
     </div>
     <div class="ai-body">
@@ -1357,7 +1435,7 @@ function renderSignals(){
       <td class="tnum">${s.metric!=null?("¥"+fmtNum(s.metric)):"—"}</td>
       <td class="sig-act">${esc(sigActionOf(s))}</td>
     </tr>`;
-  }).join("") : `<tr><td colspan="7" class="empty" style="padding:24px">該当するKWシグナルはありません。</td></tr>`;
+  }).join("") : `<tr><td colspan="7" class="empty" style="padding:24px">${mascot("sleepy","em-m sleepy")}<b>該当するKWシグナルはなし</b>新規・負け始め・好機の動きは今のところ検知していないよ。</td></tr>`;
   $("#feed").innerHTML = `
     <div class="sigbar">
       <div class="grp">${subchips}</div>
@@ -1462,7 +1540,7 @@ function renderTD(){
   if(state.comp!=="all") items=items.filter(x=>x.comp===state.comp);
   if(q) items=items.filter(x=>x.text.toLowerCase().includes(q));
   $("#feedCount").textContent = `広告文 ${items.length}件を分解`;
-  if(!items.length){ $("#feed").innerHTML=`<div class="empty">TD（広告文）データがありません。KeywordmapのCSVを読み込むと分解できます。</div>`; return; }
+  if(!items.length){ $("#feed").innerHTML=`<div class="empty">${mascot("think","em-m")}<b>広告文データがまだないよ</b>KeywordmapのCSVを読み込むと、ここで広告文を分解・ブラッシュアップできるよ。</div>`; return; }
   const cov=tdCoverage(items);
   const covHtml=cov.map(c=>`
     <div class="cov-row ${c.gap?'gap':''}">
@@ -1632,7 +1710,7 @@ function renderLP(){
       <td class="tnum">${x.imp?fmtNum(x.imp):"—"}</td>
       <td class="tnum">${x.cr?fmtNum(x.cr):"—"}</td>
       <td>${x.tags.map(t=>`<span class="td-tag">${t.label}</span>`).join(" ")||'<span style="color:var(--ink-3)">—</span>'}</td>
-    </tr>`).join("") : `<tr><td colspan="6" class="empty" style="padding:24px">LPデータがありません。ADクロールのlanding_pageを読み込むと分析できます。</td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="6" class="empty" style="padding:24px">${mascot("think","em-m")}<b>LPデータがまだないよ</b>ADクロールのlanding_pageを読み込むと、競合LPの分析と作成アイデアが出せるよ。</td></tr>`;
   $("#feed").innerHTML=`
     <div class="td-board">
       <div class="td-sec">
@@ -1703,30 +1781,35 @@ function overviewWidgets(){
   // news
   const news=ev.filter(e=>e.cat==="NEWS");
 
-  const card=(goto,icon,title,inner)=>`<div class="ov-card" data-goto="${goto}"><div class="ov-h">${icon} ${title}<span class="go">詳細 →</span></div>${inner}</div>`;
+  const card=(goto,icon,title,inner,mv="happy")=>`<div class="ov-card" data-goto="${goto}">${mascot(mv,"ovm")}<div class="ov-h">${icon} ${title}<span class="go">詳細 →</span></div>${inner}</div>`;
   const list=arr=>`<div class="ov-list">${arr.map(x=>`<div>・${esc(x)}</div>`).join("")||'<div style="color:var(--ink-3)">—</div>'}</div>`;
 
   const wKW=card("KWSIG","🎯","KWシグナル",
     `<div class="ov-stat"><div class="s"><b class="tnum" style="color:var(--add)">${sc.new}</b><i>🆕新規</i></div><div class="s"><b class="tnum" style="color:var(--rm)">${sc.down}</b><i>📉負け始め</i></div><div class="s"><b class="tnum" style="color:var(--info)">${sc.opp}</b><i>🎯好機</i></div></div>`+
-    (sgTop?`<div class="ov-list"><div>最大コスト: <b>${esc(sgTop.title)}</b>（¥${fmtNum(sgTop.metric||0)}／${esc(sgTop.rankPrev)}→${esc(sgTop.rankNow)}位）</div></div>`:""));
+    (sgTop?`<div class="ov-list"><div>最大コスト: <b>${esc(sgTop.title)}</b>（¥${fmtNum(sgTop.metric||0)}／${esc(sgTop.rankPrev)}→${esc(sgTop.rankNow)}位）</div></div>`:""), "search");
 
   const wCR=card("CR","🖼","CR（クリエイティブ）",
     `<div class="ov-stat"><div class="s"><b class="tnum">${crSum?fmtNum(num(crSum.after,/総CR(\d+)/)||0):crThemes.length}</b><i>総CR</i></div><div class="s"><b class="tnum">${crSum?fmtNum(num(crSum.after,/新規CR(\d+)/)||0):"—"}</b><i>新規CR</i></div><div class="s"><b class="tnum">${crSum?fmtNum(crSum.metric||0):"—"}</b><i>表示回数</i></div></div>`+
-    `<div class="ov-bar">${mediaTop.map(([m,n])=>`<div class="row"><i>${esc(m)}</i><b style="width:${Math.round(n/mMax*100)}%"></b><span>${n}</span></div>`).join("")}</div>`);
+    `<div class="ov-bar">${mediaTop.map(([m,n])=>`<div class="row"><i>${esc(m)}</i><b style="width:${Math.round(n/mMax*100)}%"></b><span>${n}</span></div>`).join("")}</div>`, "cheer");
 
   const wTD=card("TD","🔤","TD（広告文）",
     `<div class="ov-stat"><div class="s"><b class="tnum">${tdItems.length}</b><i>分解件数</i></div><div class="s"><b class="tnum" style="color:var(--rm)">${gaps.length}</b><i>抜け(追加候補)</i></div></div>`+
-    list(gaps.slice(0,3).map(g=>g.el.label)));
+    list(gaps.slice(0,3).map(g=>g.el.label)), "think");
 
   const wLP=card("LP","📄","LP（ランディング）",
     `<div class="ov-stat"><div class="s"><b class="tnum">${lpItems.length}</b><i>競合LP</i></div><div class="s"><b class="tnum" style="color:var(--rm)">${lpGap.length}</b><i>作成候補タイプ</i></div></div>`+
-    list(dist.filter(d=>d.n>0).slice(0,3).map(d=>`${d.t.label}（${d.compN}本）`)));
+    list(dist.filter(d=>d.n>0).slice(0,3).map(d=>`${d.t.label}（${d.compN}本）`)), "happy");
 
   const wNews=card("NEWS","📰","ニュース・事業動向",
-    news.length?`<div class="ov-list">${news.slice(0,3).map(n=>`<div>・<b>${esc(n.after||n.title)}</b> <span style="color:var(--ink-3)">（${esc(n.date)}）</span></div>`).join("")}</div>`:'<div class="ov-list"><div style="color:var(--ink-3)">新規なし</div></div>');
+    news.length?`<div class="ov-list">${news.slice(0,3).map(n=>`<div>・<b>${esc(n.after||n.title)}</b> <span style="color:var(--ink-3)">（${esc(n.date)}）</span></div>`).join("")}</div>`:'<div class="ov-list"><div style="color:var(--ink-3)">新規なし</div></div>', "wink");
 
-  return `<div class="ov-grid">${wKW}${wCR}${wTD}${wLP}${wNews}</div>
-    <div class="section-h" style="margin-top:4px"><h2>変化点の詳細</h2><span class="hint">下は全変化点のカード一覧（カテゴリで絞り込み）</span><div class="rule"></div></div>`;
+  const alive=sc.new+sc.down+sc.opp+crThemes.length+news.length;
+  const tip = alive
+    ? `今週は競合の動きを <b>${sc.new+sc.down+sc.opp}件</b> のKWシグナル・<b>CR${crThemes.length}訴求</b>・<b>ニュース${news.length}件</b> でキャッチしたよ。気になるカードをクリックして詳しく見てね🔍`
+    : `今週はまだ大きな動きは検知していないみたい。データを読み込むとここに要約が出るよ！`;
+  const bubble=`<div class="m-tip">${mascot("cheer","avatar")}<div class="bubble">${tip}</div></div>`;
+  return bubble + `<div class="ov-grid">${wKW}${wCR}${wTD}${wLP}${wNews}</div>
+    <div class="section-h" style="margin-top:4px"><h2>${mascot("search","mini-m")}変化点の詳細</h2><span class="hint">下は全変化点のカード一覧（カテゴリで絞り込み）</span><div class="rule"></div></div>`;
 }
 
 function renderFeed(){
@@ -1741,7 +1824,7 @@ function renderFeed(){
   $("#feedCount").textContent = d
     ? `${list.length}件表示（🆕${list.filter(d.isNew).length}／継続${list.filter(e=>!d.isNew(e)).length}）＋消滅${goneList.length} / 全${all.length}件`
     : `${list.length} 件を表示中 / 全 ${all.length} 件`;
-  if(!list.length && !goneList.length){ $("#feed").innerHTML=`<div class="empty">条件に一致する変化点はありません。</div>`; return; }
+  if(!list.length && !goneList.length){ $("#feed").innerHTML=`<div class="empty">${mascot("sleepy","em-m sleepy")}<b>今のところ変化点はなし</b>この条件では動きを検知していないよ。週やカテゴリを切り替えてみてね。</div>`; return; }
   const badgeOf=e=> d ? (d.isNew(e)?`<span class="badge-diff new">🆕 新規</span>`:`<span class="badge-diff keep">↔ 継続</span>`) : "";
   const deltaOf=e=>{
     if(!baseline) return null;
@@ -1937,6 +2020,13 @@ $("#themeBtn").addEventListener("click",()=>{
     (matchMedia("(prefers-color-scheme:dark)").matches?"light":"dark");
   document.documentElement.setAttribute("data-theme",next);
 });
+
+/* 背景にマスコットを散らす */
+(function scatterMascots(){
+  const host=$("#bgMascots"); if(!host) return;
+  const plan=[["m1","happy"],["m2","wink"],["m3","search"],["m4","cheer"]];
+  host.innerHTML=plan.map(([c,v])=>`<div class="m ${c}">${mascot(v)}</div>`).join("");
+})();
 
 /* 起動: 保存済み履歴があれば復元、なければ初期表示 */
 (function boot(){
